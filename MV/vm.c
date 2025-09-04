@@ -2,10 +2,6 @@
 #include <string.h>
 #include "vm.h"
 
-#define TAMANIO_CABECERA 5
-#define POSICION_CS 0
-
-
 void inicializarVM(char * nombreArchivo,uint8_t *memoria,unsigned int *DS,unsigned int *CS){
     int c;
     uint8_t version;
@@ -54,5 +50,4 @@ int esProgramaValido(char * nombreArchivo){
     }
      return strcmp(cabeceraEsperada,cabecera) == 0;
 }
-
 
