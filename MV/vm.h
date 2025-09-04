@@ -13,6 +13,6 @@ typedef struct{
 
 
 void inicializarVM(char * nombreArchivo,TVM*MV, unsigned int *DS,unsigned int *CS);
-void inicializaRegistros(TVM *MV);
-void inicializarTablaDescriptores(TVM *VM);
+void inicializarRegistros(TVM *MV);
+void inicializarTablaDescriptores(TVM *VM,uint32_t CS,uint32_t DS);
 int esProgramaValido(char * nombreArchivo);

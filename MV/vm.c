@@ -51,7 +51,10 @@ int esProgramaValido(char * nombreArchivo){
      return strcmp(cabeceraEsperada,cabecera) == 0;
 }
 
-void inicializarTablaDescriptores(TVM *VM);
+void inicializarTablaDescriptores(TVM *VM,uint32_t CS,uint32_t DS){
+  VM->tablaDescriptoresSegmentos[0] = (CS << 16) | (DS & 0xFFFF);
+  VM->tablaDescriptoresSegmentos[1] = (DS << 16) | ((MEMORIA-DS) & 0xFFFF);
+}
 
 
-void inicializaRegistros(TVM *MV);
+void inicializarRegistros(TVM *MV);
