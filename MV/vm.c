@@ -56,5 +56,8 @@ void inicializarTablaDescriptores(TVM *VM,uint32_t CS,uint32_t DS){
   VM->tablaDescriptoresSegmentos[1] = (DS << 16) | ((MEMORIA-DS) & 0xFFFF);
 }
 
-
-void inicializarRegistros(TVM *MV);
+void inicializarRegistros(TVM *MV,uint32_t CS, uint32_t DS){
+    MV->registros[26]=CS;
+    MV->registros[27]=DS;
+    MV->registros[3]=CS;
+}
