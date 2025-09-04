@@ -2,7 +2,7 @@
 #include <string.h>
 #include "vm.h"
 
-void inicializarVM(char * nombreArchivo,uint8_t *memoria,unsigned int *DS,unsigned int *CS){
+void inicializarVM(char * nombreArchivo,TVM *VM,unsigned int *DS,unsigned int *CS){
     int c;
     uint8_t version;
     uint16_t tamanio_CS,masSignificativos,menosSignificativos,i=0;
@@ -22,7 +22,7 @@ void inicializarVM(char * nombreArchivo,uint8_t *memoria,unsigned int *DS,unsign
     tamanio_CS = (masSignificativos << 8) | menosSignificativos;
     i=0;
     while(i<tamanio_CS){
-        memoria[i] = fgetc(VMX);
+        VM->memoria[i] = fgetc(VMX);
         i++;
     }
     *CS = POSICION_CS;
@@ -51,3 +51,7 @@ int esProgramaValido(char * nombreArchivo){
      return strcmp(cabeceraEsperada,cabecera) == 0;
 }
 
+void inicializarTablaDescriptores(TVM *VM);
+
+
+void inicializaRegistros(TVM *MV);
