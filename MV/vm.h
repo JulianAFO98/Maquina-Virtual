@@ -7,12 +7,12 @@
 
 typedef struct{
     uint8_t memoria[MEMORIA];
-    uint32_t tablaDescriptoresSegmentos[CANT_TABLA]; // preguntar por CS Y DS en 00 00 00 00 y 00 01 00 00
+    uint32_t tablaDescriptoresSegmentos[CANT_TABLA];
     int32_t registros[CANT_REGISTROS];
 } TVM;
 
 
-void inicializarVM(char * nombreArchivo,TVM*MV, unsigned int *DS,unsigned int *CS);
-void inicializarRegistros(TVM *MV,uint32_t CS,uint32_t DS);
-void inicializarTablaDescriptores(TVM *VM,uint32_t CS,uint32_t DS);
+void inicializarVM(char * nombreArchivo,TVM*MV);
+void inicializarTablaDescriptores(TVM *VM);
 int esProgramaValido(char * nombreArchivo);
+uint32_t obtenerDireccionFisica(TVM * MV, uint32_t direccionLogica,int * error);
