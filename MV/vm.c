@@ -66,7 +66,9 @@ uint32_t obtenerDireccionFisica(TVM * MV, uint32_t direccionLogica,int *error){
     uint32_t offSet = direccionLogica & 0x0000FFFF;
     uint32_t direccionFisica = direccionBase + offSet;
     //Esto esta bien hasta aca dentro de todo
-    uint32_t limiteSegmento = direccionLogica & 0xFFFF0000;
+    uint32_t limiteSegmento = direccionLogica & 0xFFFF0000; // Esto sirve luego para la validacion
 
-    printf("El numero en hexadecimal es: 0x%08X\n", direccionFisica);
+    //falta la validacion del segmento por si se cae(No lo entendi muy bien)
+
+    return direccionFisica;
 }
