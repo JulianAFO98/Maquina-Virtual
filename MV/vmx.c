@@ -24,8 +24,7 @@ int main(int argc, char *argv[]){
                     // For Cargo OP y luego OP2
             //}
             //Operandos listos para operar
-            
-            //Array Punteros 
+            //Array Punteros[OPC]
             // Si hay algun JUMP cambiamos Ip sino sumamos como esta abajo
             VM.registros[3]+=obtenerSumaBytes(&VM)+1; // Sumamos al IP los bytes a leer mas 1
             cont++;

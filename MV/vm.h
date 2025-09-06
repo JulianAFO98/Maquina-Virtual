@@ -6,6 +6,7 @@
 #define CANT_TABLA 8
 #define MNEMONICO 4
 
+
 typedef struct{
     uint8_t memoria[MEMORIA];
     uint32_t tablaDescriptoresSegmentos[CANT_TABLA];
