@@ -43,18 +43,16 @@ void inicializarTablaDescriptores(TVM *VM){
 }
 
 
-// En construccion, Primero quiero tratar OP OP1 y OP2 para ver como hacer esto bien
 uint32_t obtenerDireccionFisica(TVM * MV, uint32_t direccionLogica,int *error){
     uint16_t segmento = direccionLogica >> 16; // Obtengo el 0001 o el 0000 del codigo de segmento
-    uint32_t direccionBase = (MV->tablaDescriptoresSegmentos[segmento] >> 16) & 0xFFFF; //Quizas es buena idea convertir las mascaras en constantes
+    uint32_t direccionBase = (MV->tablaDescriptoresSegmentos[segmento] >> 16) & 0xFFFF;
     uint32_t offSet = direccionLogica & 0x0000FFFF;
     uint32_t direccionFisica = direccionBase + offSet;
-    //Esto esta bien hasta aca dentro de todo
-    uint32_t limiteSegmento = direccionLogica & 0xFFFF0000; // Esto sirve luego para la validacion
+    uint32_t limiteSegmento = MV->tablaDescriptoresSegmentos[segmento] & 0xFFFF;
 
-
-    //falta la validacion del segmento por si se cae(No lo entendi muy bien)
-
+    if (direccionFisica < direccionBase || direccionFisica + 3 > limiteSegmento) {
+        *error = 1;  
+    }   
     return direccionFisica;
 }
 
