@@ -38,15 +38,15 @@ int main(int argc, char *argv[])
                     if ((op1 != 0) && (op2 != 0))
                     {
                         uint32_t auxDireccion = direccionFisicaIP; //Variable auxiliar para no operar directamente desde direccionFisicaIP
-                        if (op1 != 0)
-                        {
-                            VM.registros[5] = cargarOperando(VM.registros[5], VM.memoria, auxDireccion , op1); 
-                            auxDireccion += op1; 
-                        }
-
                         if (op2 != 0)
                         {
-                            VM.registros[6] = cargarOperando(VM.registros[6], VM.memoria, auxDireccion, op2);
+                            VM.registros[6] = cargarOperando(VM.registros[6], VM.memoria, direccionFisicaIP , op2); 
+                            auxDireccion += op2; 
+                        }
+
+                        if (op1 != 0)
+                        {
+                            VM.registros[5] = cargarOperando(VM.registros[5], VM.memoria, direccionFisicaIP+op2, op1);
                         }
                     }
                     printf("0x%08X 0x%08X\n", VM.registros[5], VM.registros[6]);
