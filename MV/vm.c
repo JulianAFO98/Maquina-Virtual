@@ -52,6 +52,7 @@ uint32_t obtenerDireccionFisica(TVM * MV, uint32_t direccionLogica,int *error){
     //Esto esta bien hasta aca dentro de todo
     uint32_t limiteSegmento = direccionLogica & 0xFFFF0000; // Esto sirve luego para la validacion
 
+
     //falta la validacion del segmento por si se cae(No lo entendi muy bien)
 
     return direccionFisica;
@@ -99,8 +100,6 @@ void interpretaInstruccion(TVM*MV, uint8_t instruccion) {
     MV ->registros[5] = ((instruccion >> 4) & 0x3) << 24;  // Ej:0x01000000 -> Con la lectura en main se volveria 0x01000033 
     MV ->registros[6] = ((instruccion >> 6) & 0x3) << 24; 
     MV ->registros[4] = instruccion & 0x1F;
-  
-
 }
 
 
@@ -110,6 +109,26 @@ uint8_t obtenerSumaBytes(TVM *MV){
     return op1+op2;
 }
 
+uint32_t cargarOperando(uint32_t reg, uint8_t *memoria, uint32_t direccion, uint8_t cantidadBytes)
+{
+    //Mantengo por las dudas el byte mas significativo
+    uint32_t tipo = reg & 0xFF000000;
+    uint32_t valor = 0;
+    uint32_t inst;
+
+    //Valor lo seteo en 0. En cada iteracion valor se corre 1 byte a la izquierda
+    //Ej: declaro valor = 0x00000000
+    //Paso 1 -> valor << 8 | memoria = 0x00000012
+    //Paso 2 -> valor << 8 | memoria = 0x00001234
+    // y asi
+    for (int i = 0; i < cantidadBytes; i++)
+    {
+        valor = (valor << 8) | memoria[direccion + i + 1];
+    }
+    inst = tipo | valor; 
+
+    return inst;
+}
 
 uint32_t get(TVM *MV,uint32_t OP){
     //uint32_t byteCabecera = (OP & 0xFF000000);

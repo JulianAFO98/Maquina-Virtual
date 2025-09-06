@@ -23,6 +23,7 @@ uint32_t obtenerDireccionFisica(TVM * MV, uint32_t direccionLogica,int * error);
 uint8_t obtenerSumaBytes(TVM *MV);
 char *operacionDessambler(uint8_t codOp);
 void interpretaInstruccion(TVM *VM,uint8_t instruccion);
+uint32_t cargarOperando(uint32_t, uint8_t *, uint32_t, uint8_t);
 
 
 //Funciones especiales de seteo y obtencion de datos
