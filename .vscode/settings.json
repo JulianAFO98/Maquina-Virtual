@@ -1,5 +1,7 @@
 {
     "files.associations": {
-        "stdint.h": "c"
+        "stdint.h": "c",
+        "funciones.h": "c",
+        "vm.h": "c"
     }
 }

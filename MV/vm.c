@@ -33,23 +33,7 @@ void inicializarVM(char * nombreArchivo,TVM *VM){
 }
 
 
-int esProgramaValido(char * nombreArchivo){
-    char cabeceraEsperada[] = "VMX25";
-    char cabecera[TAMANIO_CABECERA + 1];
-    int i = 0;
-    FILE * VMX = fopen(nombreArchivo,"rb");
-    if(VMX == NULL){
-        printf("El archivo no existe");
-    }else{
-         while(i<TAMANIO_CABECERA  && !feof(VMX)){
-            cabecera[i] = fgetc(VMX);
-            i++;
-        }
-        cabecera[i] = '\0';
-        fclose(VMX);
-    }
-     return strcmp(cabeceraEsperada,cabecera) == 0;
-}
+
 
 void inicializarTablaDescriptores(TVM *VM){
   uint32_t CS = VM ->registros[26];
@@ -73,7 +57,7 @@ uint32_t obtenerDireccionFisica(TVM * MV, uint32_t direccionLogica,int *error){
     return direccionFisica;
 }
 
-char* operacion(uint8_t codOp) {
+char* operacionDessambler(uint8_t codOp) {
     switch(codOp) {
         case 0x00: return "SYS";
         case 0x01: return "JMP";
@@ -125,3 +109,11 @@ uint8_t obtenerSumaBytes(TVM *MV){
     uint8_t op2 = (MV ->registros[6] >> 24) & 0x3;
     return op1+op2;
 }
+
+
+uint32_t get(TVM *MV,uint32_t OP){
+    //uint32_t byteCabecera = (OP & 0xFF000000);
+}
+void set(TVM *MV,uint32_t * OP1,uint32_t OP2);
+
+

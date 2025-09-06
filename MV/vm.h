@@ -1,3 +1,6 @@
+#ifndef VM_H
+#define VM_H
+
 #include <stdint.h>
 #define TAMANIO_CABECERA 5
 #define POSICION_CS 0
@@ -16,8 +19,14 @@ typedef struct{
 
 void inicializarVM(char * nombreArchivo,TVM*MV);
 void inicializarTablaDescriptores(TVM *VM);
-int esProgramaValido(char * nombreArchivo);
 uint32_t obtenerDireccionFisica(TVM * MV, uint32_t direccionLogica,int * error);
 uint8_t obtenerSumaBytes(TVM *MV);
-char *operacion(uint8_t codOp);
+char *operacionDessambler(uint8_t codOp);
 void interpretaInstruccion(TVM *VM,uint8_t instruccion);
+
+
+//Funciones especiales de seteo y obtencion de datos
+uint32_t get(TVM *MV, uint32_t OP);
+void set(TVM *MV, uint32_t *OP1, uint32_t OP2);
+
+#endif 
