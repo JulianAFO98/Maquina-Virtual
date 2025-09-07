@@ -45,7 +45,6 @@ typedef struct{
 
 
 void inicializarVM(char * nombreArchivo,TVM*MV);
-void inicializarTablaDescriptores(TVM *VM);
 uint32_t obtenerDireccionFisica(TVM * MV, uint32_t direccionLogica,int * error);
 uint8_t obtenerSumaBytes(TVM *MV);
 char *operacionDessambler(uint8_t codOp);
