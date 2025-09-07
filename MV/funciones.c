@@ -41,7 +41,7 @@ void STOP(TVM *MV){
     //code
 }
 void MOV(TVM *MV){
-    //code
+   set(MV, MV->registros[OP1], get(MV,MV->registros[OP2],4));
 }
 void ADD(TVM *MV){
     //code

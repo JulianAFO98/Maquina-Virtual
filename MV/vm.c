@@ -166,84 +166,50 @@ uint32_t cargarOperando(uint32_t reg, uint8_t *memoria, uint32_t direccion, uint
     return inst;
 }
 
-void MOV1(TVM *MV, uint32_t op1, uint32_t op2)
-{
-    // set(MV, op1, get(MV, op2, sizeof(op2)));
-    set(MV, op1, 0x02000001);
-}
 
-uint32_t get(TVM *MV, uint32_t op, uint8_t cantBytes)
-{
-    uint32_t TOperando = (op & 0xFF000000) >> 24;
-    uint32_t valor;
-    if (TOperando == MEMORIA)
-    {
+uint32_t get(TVM *MV, uint32_t op, uint8_t cantBytes) {
+    uint32_t TOperando = (op & 0xFF000000) >> 24; // tipo de operando
+    uint32_t valor = 0;
+
+    if (TOperando == TMEMORIA) {
         int error = 0;
-        uint32_t segmento = (MV->tablaDescriptoresSegmentos[0] >> 16) & 0xFFFF;
-        uint32_t offset = op & 0xFFFF;
-        uint32_t dirLogica = (segmento << 16) | offset;
+        uint32_t segmento = (MV->registros[27] >> 16) & 0xFFFF; // selector de segmento (ej: DS = 0001)
+        uint32_t offset   = op & 0xFFFF;                        // offset lógico
+        uint32_t regBase  = (op >> 16) & 0xFF;                  // registro base si hay (ej: 0D = EDX)
+
+        uint32_t dirLogica;
+        if (regBase != 0)
+            dirLogica = (segmento << 16) | MV->registros[regBase] + offset;
+        else
+            dirLogica = (segmento << 16) | offset;
+
         uint32_t dirFisica = obtenerDireccionFisica(MV, dirLogica, &error);
-        uint32_t cantBytes = (op & 0xFF000000) >> 24;
 
-        // Guardar dirección lógica en LAR
-        MV->registros[LAR] = dirLogica;
-        // Guardar cantidad de bytes (alto) y dirección física (bajo) en MAR
-        MV->registros[MAR] = ((cantBytes << 16) & 0xFFFF0000) | (dirFisica & 0x0000FFFF);
-
-        // Leer valor de memoria, byte a byte
-        valor = 0;
-        for (int i = 0; i < cantBytes; i++)
-        {
+        // reconstruyo valor desde memoria (big endian)
+        for (int i = 0; i < cantBytes; i++) {
             valor = (valor << 8) | MV->memoria[dirFisica + i];
         }
 
-        // Guardar valor leído en MBR
+        MV->registros[LAR] = dirLogica;
+        MV->registros[MAR] = ((cantBytes << 16) & HIGH_MASK) | (dirFisica & LOW_MASK);
         MV->registros[MBR] = valor;
     }
-    else if (TOperando == REGISTRO)
-    {
-        // Leer directamente del registro
-        valor = MV->registros[op];
-        MV->registros[MBR] = valor;
+    else if (TOperando == REGISTRO) {
+        uint32_t reg = (op >> 16) & 0xFF;  // el nº de registro está acá
+        valor = MV->registros[reg] & 0x00FFFFFF;
     }
-    else if (TOperando == INMEDIATO)
-    {
-        valor = op & 0x00FFFFFF; // valor inmediato (24 bits)
-        MV->registros[MBR] = valor;
+    else if (TOperando == INMEDIATO) {
+        // op = 0x01 + valor inmediato en los 3 bytes bajos
+        valor = op & 0x00FFFFFF;
     }
+
     return valor;
 }
-/*
 
-void set(TVM *MV,uint32_t op1,uint32_t op2){
-    uint32_t TOperando = (op1 & 0xFF000000) >> 24; // podriamos usar el Operando ya guardado en la MV
-    printf("Operando 1: 0x%08X\n", op1);
 
-    if(TOperando == TMEMORIA){
-        int error = 0;
-        uint32_t segmento = (MV->registros[27] >> 16) & 0xFFFF; // segmento de la dirección lógica // 0 o 1??
-        uint32_t offset = op1 & 0xFFFF;           // offset de la dirección lógica
 
-        uint32_t dirLogica = (segmento << 16) | offset;
-        uint32_t dirFisica = obtenerDireccionFisica(MV, dirLogica, &error);
-        //uint32_t cantBytes = (op2 & 0xFF000000) >> 24; cantBytes siempre va a ser 4
-        uint32_t cantBytes = 4; // deberia ser 4 siempre
-        MV->registros[LAR] = dirLogica;
-        //aca Use el 4 pero tirandolo a los 4 mas significativos para armar el MAR
-        MV->registros[MAR] = ((0x0004 << 16) & HIGH_MASK) | (dirFisica & LOW_MASK); //Cargo en los 2 byte mas significativos la cantidad de bytes en memoria y en los menos significativos la direccion fisica
-        MV->registros[MBR] = op2 & 0x00FFFFFF; //Filtro los bytes que pertenecen al tipo de operando
-        //se puede extraer y hacer un  prodimiento asigna memoria con LAR MAR Y MRB
-        int32_t valor =  MV->registros[MBR];
-        for(int i=0; i<cantBytes ; i++){
-            //MV->memoria[(MV->tablaDescriptoresSegmentos[0]&LOW_MASK) + cantBytes + i] = (op2 >> 8) * (cantBytes - 1); //No estoy seguro si esta bien
-            MV->memoria[dirFisica + i] = (valor >> (8 * (cantBytes - 1 - i))) & 0xFF;
-        }
-    }else if(TOperando == REGISTRO){
-        MV->registros[OP1] = op2 & 0x00FFFFFF; //Ej : OP2 = 02 00 00 01 -> si le aplico Mid-High Mask => 00 00 00 01
-    }
 
-}
-*/
+
 
 void set(TVM *MV, uint32_t op1, uint32_t op2)
 {

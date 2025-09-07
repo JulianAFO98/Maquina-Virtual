@@ -61,7 +61,8 @@ int main(int argc, char *argv[])
                     {
                         VM.registros[13] = 0x00000FFF;
                         uint32_t direFisica = 0x00001030; // EDX + 4
-                        MOV1(&VM, VM.registros[OP1], VM.registros[OP2]);
+                        printf("valor GET 0x%08X\n", get(&VM,VM.registros[OP2],4));
+                        MOV(&VM);
                         printf("Debug MOV: Valor seteado en memoria[0x%04X]:\n", direccionFisicaIP);
                         printf("Valor Tabla seg [0x%04X]:\n", (VM.tablaDescriptoresSegmentos[1]>>16));
 
