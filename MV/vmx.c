@@ -61,7 +61,6 @@ int main(int argc, char *argv[])
                     if (VM.memoria[direccionFisicaIP] == 0x000000B0)
                     {
                         MOV1(&VM, VM.registros[OP1], VM.registros[OP2]);
-                        // Supón que la dirección física relevante está en MAR (parte baja)
                         uint32_t dirFisica = VM.registros[MAR];
                         printf("Debug MOV: Valor seteado en memoria[0x%04X] = 0x%08X\n", dirFisica, VM.memoria[dirFisica]);
                         printf("MBR: 0x%08X\n", VM.registros[MBR]);
@@ -110,3 +109,4 @@ uint8_t comprobarExtension(char *nombreArchivo)
     uint16_t len = strlen(nombreArchivo);
     return len < 4 ? 0 : strcmp(nombreArchivo + (len - 4), ".vmx") == 0;
 }
+
