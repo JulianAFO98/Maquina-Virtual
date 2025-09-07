@@ -10,6 +10,33 @@
 #define MNEMONICO 4
 
 
+#define HIGH_MASK 0xFFFF0000 //2 Bytes mas significativos
+#define LOW_MASK 0x0000FFFF //2 Bytes menos significativos
+#define MH_MASK 0xFF000000 // Mid high mask -> byte mas significativo
+#define ML_MASK 0x000000FF // MId low mask -> byte menos significativo
+
+//Quizas sea mejor agruparlos en un typedef
+#define INMEDIATO 0x01
+#define REGISTRO 0x02
+#define TMEMORIA 0x03
+
+#define LAR 0
+#define MAR 1
+#define MBR 2
+#define IP 3
+#define OPC 4
+#define OP1 5
+#define OP2 6
+#define EAX 10
+#define EBX 11
+#define ECX 12
+#define EDX 13
+#define EEX 14
+#define EFX 15
+#define EGX 16
+
+
+
 typedef struct{
     uint8_t memoria[MEMORIA];
     uint32_t tablaDescriptoresSegmentos[CANT_TABLA];
@@ -24,10 +51,11 @@ uint8_t obtenerSumaBytes(TVM *MV);
 char *operacionDessambler(uint8_t codOp);
 void interpretaInstruccion(TVM *VM,uint8_t instruccion);
 uint32_t cargarOperando(uint32_t, uint8_t *, uint32_t, uint8_t);
+void MOV1(TVM *MV, uint32_t op1, uint32_t op2);
 
 
 //Funciones especiales de seteo y obtencion de datos
-uint32_t get(TVM *MV, uint32_t OP);
-void set(TVM *MV, uint32_t *OP1, uint32_t OP2);
+uint32_t get(TVM *MV, uint32_t op,uint8_t num);
+void set(TVM *MV, uint32_t op1, uint32_t op2);
 
 #endif 

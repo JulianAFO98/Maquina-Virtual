@@ -27,11 +27,10 @@ int main(int argc, char *argv[])
                 {                                                                             //
                     direccionFisicaIP = obtenerDireccionFisica(&VM, VM.registros[3], &error); // obtener instruccion a partir de la IP Logica Reg[3] es el reg IP
                     interpretaInstruccion(&VM, VM.memoria[direccionFisicaIP]);
-
                     uint8_t op1 = (VM.registros[5] >> 24) & 0x3;
                     uint8_t op2 = (VM.registros[6] >> 24) & 0x3;
                     // Debug por las dudas
-                    // printf("IP logico: 0x%08X | Dir. fisica: 0x%08X | Instruccion: 0x%08X | op1=%d op2=%d\n", VM.registros[3], direccionFisicaIP, VM.memoria[direccionFisicaIP], op1, op2);
+                    printf("IP logico: 0x%08X | Dir. fisica: 0x%08X | Instruccion: 0x%08X | op1=%d op2=%d\n", VM.registros[3], direccionFisicaIP, VM.memoria[direccionFisicaIP], op1, op2);
                     // printf("0x%08X 0x%08X\n", VM.registros[5], VM.registros[6]);
                     // Valido que haya algun operando
                     if ((op1 != 0) && (op2 != 0))
@@ -57,6 +56,17 @@ int main(int argc, char *argv[])
                             VM.registros[5] = cargarOperando(VM.registros[5], VM.memoria, direccionFisicaIP, op1);
                         }
                     }
+
+                    printf("0x%08X 0x%08X\n", VM.registros[OP1], VM.registros[OP2]);
+                    if (VM.memoria[direccionFisicaIP] == 0x000000B0)
+                    {
+                        MOV1(&VM, VM.registros[OP1], VM.registros[OP2]);
+                        // Supón que la dirección física relevante está en MAR (parte baja)
+                        uint32_t dirFisica = VM.registros[MAR];
+                        printf("Debug MOV: Valor seteado en memoria[0x%04X] = 0x%08X\n", dirFisica, VM.memoria[dirFisica]);
+                        printf("MBR: 0x%08X\n", VM.registros[MBR]);
+                    }
+
                     // printf("0x%08X 0x%08X\n", VM.registros[5], VM.registros[6]);
                     //  Operandos listos para operar
                     //  operaciones[VM.registros[4]](&VM);
