@@ -38,19 +38,19 @@ void NOT(TVM *MV){
     //code
 }
 void STOP(TVM *MV){
-    //code
+    MV->registros[IP] = -1;
 }
 void MOV(TVM *MV){
    set(MV, MV->registros[OP1], get(MV,MV->registros[OP2],4));
 }
 void ADD(TVM *MV){
-    //code
+    set(MV, MV->registros[OP1],get(MV,MV->registros[OP1],4) + get(MV,MV->registros[OP2],4));
 }
 void SUB(TVM *MV){
-    //code
+    set(MV, MV->registros[OP1],get(MV,MV->registros[OP1],4) - get(MV,MV->registros[OP2],4));
 }
 void MUL(TVM *MV){
-    //code
+    set(MV, MV->registros[OP1],get(MV,MV->registros[OP1],4) * get(MV,MV->registros[OP2],4));
 }
 void DIV(TVM *MV){
     //code

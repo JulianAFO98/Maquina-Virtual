@@ -22,10 +22,12 @@ int main(int argc, char *argv[])
             if (esProgramaValido(argv[1])) // Esto ya dentro del archivo mira si lleva VMX25 en los primeros 5 bytes
             {
                 inicializarVM(argv[1], &VM);
-                while (VM.registros[IP] != 0xF && !error)
+                while (VM.registros[IP] >= 0 && !error)
                 {                                                                             //
                     direccionFisicaIP = obtenerDireccionFisica(&VM, VM.registros[IP], &error); // obtener instruccion a partir de la IP Logica Reg[3] es el reg IP
                     interpretaInstruccion(&VM, VM.memoria[direccionFisicaIP]);
+                    //If JMP Acomodar ip sino sumar bytes
+                    VM.registros[IP] += obtenerSumaBytes(&VM) + 1; 
                     uint8_t op1 = (VM.registros[OP1] >> 24) & 0x3;
                     uint8_t op2 = (VM.registros[OP2] >> 24) & 0x3;
                     // Debug por las dudas
@@ -75,10 +77,8 @@ int main(int argc, char *argv[])
                     //  Operandos listos para operar
                     operaciones[VM.registros[OPC]](&VM);
                     printf("%s\n", operacionDessambler(VM.registros[OPC]));
-                    //If JMP Acomodar ip sino sumar bytes
-                    VM.registros[IP] += obtenerSumaBytes(&VM) + 1; 
                 }
-                if (error == 1)
+                if (error == 1 && VM.registros[IP] != -1)
                 {
                     printf("Segmentation fault");
                 }
