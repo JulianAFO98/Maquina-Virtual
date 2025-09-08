@@ -19,7 +19,8 @@
 #define REGISTRO 0x01
 #define INMEDIATO 0x02
 #define TMEMORIA 0x03
-
+#define CS 26
+#define DS 27
 #define LAR 0
 #define MAR 1
 #define MBR 2
@@ -50,7 +51,6 @@ uint8_t obtenerSumaBytes(TVM *MV);
 char *operacionDessambler(uint8_t codOp);
 void interpretaInstruccion(TVM *VM,uint8_t instruccion);
 uint32_t cargarOperando(uint32_t, uint8_t *, uint32_t, uint8_t);
-void MOV1(TVM *MV, uint32_t op1, uint32_t op2);
 
 
 //Funciones especiales de seteo y obtencion de datos

@@ -28,11 +28,11 @@ void inicializarVM(char *nombreArchivo, TVM *VM)
     }
     // Inicia registro Claves
     //  sujeto a cambios ya que si cambia el inicio del CS hay que buscar la forma en que no sea harcodeado
-    VM->registros[26] = 0x0; // hoy fix
-    VM->registros[27] = (0x0001 << 16);
-    VM->registros[3] = POSICION_CS;
-    VM->tablaDescriptoresSegmentos[0] = VM->registros[26] | (tamanio_CS & 0xFFFF);
-    VM->tablaDescriptoresSegmentos[1] = (VM->tablaDescriptoresSegmentos[0] << 16) | ((MEMORIA - tamanio_CS) & 0xFFFF);
+    VM->registros[CS] = 0x0; // hot fix
+    VM->registros[DS] = (0x0001 << 16);
+    VM->registros[IP] = POSICION_CS;
+    VM->tablaDescriptoresSegmentos[0] = VM->registros[CS] | (tamanio_CS & 0xFFFF);
+    VM->tablaDescriptoresSegmentos[1] = (VM->tablaDescriptoresSegmentos[0] << 16) | ((MEMORIA - tamanio_CS) & 0xFFFF); // fix
     VM->registros[LAR] = 0;
     VM->registros[MAR] = 0;
     VM->registros[MBR] = 0;
@@ -214,24 +214,20 @@ uint32_t get(TVM *MV, uint32_t op, uint8_t cantBytes) {
 void set(TVM *MV, uint32_t op1, uint32_t op2)
 {
     uint32_t TOperando = (op1 & 0xFF000000) >> 24; // podriamos usar el Operando ya guardado en la MV
-
-
     if (TOperando == TMEMORIA)
     {
         int error = 0;
-        uint32_t segmento = (MV->registros[27] >> 16) & 0xFFFF; // 0001 siempre 
+        uint32_t segmento = (MV->registros[DS] >> 16) & 0xFFFF; // 0001 siempre 
         uint32_t offset = op1 & 0xFFFF;                         // offset de la dirección lógica
-        uint32_t regBase = (op1 >> 16) & 0xFF;                  //0D si voy con EDX + 4
+        uint32_t regBase = (op1 >> 16) & 0xFF;                  //0D si voy con EDX
         uint32_t dirLogica;
         if (regBase != 0)
             dirLogica = (segmento << 16 ) | (MV->registros[regBase] + offset) ;
         else
             dirLogica = (segmento << 16) | offset;
         uint32_t dirFisica = obtenerDireccionFisica(MV, dirLogica, &error);
-        // uint32_t cantBytes = (op2 & 0xFF000000) >> 24; cantBytes siempre va a ser 4
-        uint32_t cantBytes = 4; // deberia ser 4 siempre
+        uint32_t cantBytes = 4; // deberia ser 4 siempre sujeto a cambios por parte 2
         MV->registros[LAR] = dirLogica;
-        // aca Use el 4 pero tirandolo a los 4 mas significativos para armar el MAR
         MV->registros[MAR] = ((0x0004 << 16) & HIGH_MASK) | (dirFisica & LOW_MASK); // Cargo en los 2 byte mas significativos la cantidad de bytes en memoria y en los menos significativos la direccion fisica
         MV->registros[MBR] = op2 & 0x00FFFFFF;                                      // Filtro los bytes que pertenecen al tipo de operando
         // se puede extraer y hacer un  prodimiento asigna memoria con LAR MAR Y MRB
