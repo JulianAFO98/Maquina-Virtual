@@ -11,6 +11,7 @@ void (*operaciones[32])(TVM *MV) = {
 void SYS(TVM *MV)
 {
     uint32_t error = 0;
+    uint32_t valor = 0;
     uint32_t dirFisica = obtenerDireccionFisica(MV,MV->registros[EDX],&error);
     int32_t op1 = get(MV, MV->registros[OP1], 4); // 0x1 READ 0x2 WRITE
     uint32_t bytesWR = MV->registros[ECX] & 0xFFFF0000; // obtengo los datos del LDH
@@ -20,7 +21,6 @@ void SYS(TVM *MV)
     {
         if (op1 == 0x1)
         {
-            uint32_t valor = 0;
             if (formato == 0x01)
                 scanf("%d", &valor);
             else if (formato == 0x02)
@@ -39,14 +39,13 @@ void SYS(TVM *MV)
                 scanf("%64s", bin);
                 valor = strtol(bin, NULL, 2);
             }
-            MV->memoria[dirFisica] = valor;
+            for (int i = 0; i < 4; i++)
+                MV->memoria[dirFisica + i] = (valor >> (8 * (3 - i))) & 0xFF;
         }
         else if (op1 == 0x2)
         {
-            //printf("0x%08X\n",MV->registros[EDX]);
-            //printf("0x%08X\n",dirFisica);
-            uint32_t valor = MV->memoria[dirFisica]; // supongamos que el valor a escribir está en EDX
-            //printf("Valor = 0x%08X",valor);
+            for (int i = 0; i < 4; i++)
+                valor = (valor << 8) | MV->memoria[dirFisica + i];
             if (formato == 0x01)
                 printf("%d", valor);
             else if (formato == 0x02)
@@ -106,12 +105,8 @@ void ADD(TVM *MV)
 {
     uint32_t op1 = MV->registros[OP1]; // operando destino
     uint32_t op2 = MV->registros[OP2]; // operando fuente
-    printf("0x%08X\n",op1);
-    printf("0x%08X\n",op2);
     int32_t val1 = get(MV, op1, 4);
     int32_t val2 = get(MV, op2, 4);
-    printf("0x%08X\n",val1);
-    printf("0x%08X\n",val2);
     int32_t res = val1 + val2;
     set(MV, op1, res);
 }

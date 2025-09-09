@@ -189,12 +189,11 @@ uint32_t get(TVM *MV, uint32_t op, uint8_t cantBytes) {
             dirLogica = (segmento << 16) | offset;
         
         uint32_t dirFisica = obtenerDireccionFisica(MV, dirLogica, &error);
-
-        // reconstruyo valor desde memoria (big endian)
         for (int i = 0; i < cantBytes; i++) {
             valor = (valor << 8) | MV->memoria[dirFisica + i];
         }
-
+        
+      
         MV->registros[LAR] = dirLogica;
         MV->registros[MAR] = ((cantBytes << 16) & HIGH_MASK) | (dirFisica & LOW_MASK);
         MV->registros[MBR] = valor;
@@ -236,8 +235,9 @@ void set(TVM *MV, uint32_t op1, uint32_t op2)
         MV->registros[MBR] = op2 & 0x00FFFFFF;                                      // Filtro los bytes que pertenecen al tipo de operando
         // se puede extraer y hacer un  prodimiento asigna memoria con LAR MAR Y MRB
         int32_t valor = MV->registros[MBR];
-        for (int i = 0; i < cantBytes; i++)
+        for (int i = 0; i < cantBytes; i++){
             MV->memoria[dirFisica + i] = (valor >> (8 * (cantBytes - 1 - i))) & 0xFF;
+        }
     }
     else if (TOperando == REGISTRO)
     {
