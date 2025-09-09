@@ -68,6 +68,9 @@ void JMP(TVM *MV)
 }
 void JZ(TVM *MV)
 {
+    if (MV->registros[CC] == 0){
+        MV->registros[IP] = get(MV,MV->registros[OP1],4);
+    }
 }
 void JP(TVM *MV)
 {
@@ -108,23 +111,49 @@ void ADD(TVM *MV)
     int32_t val1 = get(MV, op1, 4);
     int32_t val2 = get(MV, op2, 4);
     int32_t res = val1 + val2;
+    setCC(MV,res);
     set(MV, op1, res);
 }
 void SUB(TVM *MV)
 {
-    set(MV, MV->registros[OP1], get(MV, MV->registros[OP1], 4) - get(MV, MV->registros[OP2], 4));
+   uint32_t op1 = MV->registros[OP1]; 
+    uint32_t op2 = MV->registros[OP2]; 
+    int32_t val1 = get(MV, op1, 4);
+    int32_t val2 = get(MV, op2, 4);
+    int32_t res = val1 - val2;
+    setCC(MV,res);
+    set(MV, op1, res);
 }
 void MUL(TVM *MV)
 {
-    set(MV, MV->registros[OP1], get(MV, MV->registros[OP1], 4) * get(MV, MV->registros[OP2], 4));
+    uint32_t op1 = MV->registros[OP1]; 
+    uint32_t op2 = MV->registros[OP2]; 
+    int32_t val1 = get(MV, op1, 4);
+    int32_t val2 = get(MV, op2, 4);
+    int32_t res = val1 * val2;
+    setCC(MV,res);
+    set(MV, op1, res);
 }
 void DIV(TVM *MV)
 {
-    // code
+    uint32_t op1 = MV->registros[OP1]; 
+    uint32_t op2 = MV->registros[OP2]; 
+    int32_t val1 = get(MV, op1, 4);
+    int32_t val2 = get(MV, op2, 4);
+    //Controlar div 0
+    int32_t res = val1 / val2;
+    set(MV, op1, res);
+    setCC(MV,res);
+    setAC(MV,val1 % val2);
 }
 void CMP(TVM *MV)
 {
-    // code
+    uint32_t op1 = MV->registros[OP1]; 
+    uint32_t op2 = MV->registros[OP2]; 
+    int32_t val1 = get(MV, op1, 4);
+    int32_t val2 = get(MV, op2, 4);
+    int32_t res = val1 - val2;
+    setCC(MV,res);
 }
 void SHL(TVM *MV)
 {

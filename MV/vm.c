@@ -253,8 +253,12 @@ void setAC(TVM *VM,int32_t value){
 
 
 void setCC(TVM *MV,uint32_t value){
-  uint32_t esNegativo = (int32_t) value < 0;
-  uint32_t esCero = value == 0;
-  MV->registros[CC] = esNegativo << 31;
-  MV->registros[CC] = (esCero << 30) | MV->registros[CC];
+   uint32_t cc = 0;
+    if (value < 0) {
+        cc = cc | (1 << 31);
+    }
+    if (value == 0) {
+        cc = cc | (1 << 30);
+    }
+    MV->registros[CC] = cc;
 }
