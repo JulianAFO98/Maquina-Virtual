@@ -66,7 +66,7 @@ void error(int tipoError, int *error)
 }
 */
 
-char *operacionDessambler(uint8_t codOp)
+char *operacionDisassembler(uint8_t codOp)
 {
     switch (codOp)
     {
@@ -168,21 +168,26 @@ uint32_t cargarOperando(uint32_t reg, uint8_t *memoria, uint32_t direccion, uint
 
 
 uint32_t get(TVM *MV, uint32_t op, uint8_t cantBytes) {
+
     uint32_t TOperando = (op & 0xFF000000) >> 24; // tipo de operando
     uint32_t valor = 0;
 
     if (TOperando == TMEMORIA) {
         int error = 0;
         uint32_t segmento = (MV->registros[27] >> 16) & 0xFFFF; // selector de segmento (ej: DS = 0001)
+
         uint32_t offset   = op & 0xFFFF;                        // offset lógico
+
         uint32_t regBase  = (op >> 16) & 0xFF;                  // registro base si hay (ej: 0D = EDX)
+
+
 
         uint32_t dirLogica;
         if (regBase != 0)
-            dirLogica = (segmento << 16) | MV->registros[regBase] + offset;
+            dirLogica =  MV->registros[regBase] + offset;
         else
             dirLogica = (segmento << 16) | offset;
-
+        
         uint32_t dirFisica = obtenerDireccionFisica(MV, dirLogica, &error);
 
         // reconstruyo valor desde memoria (big endian)
@@ -195,11 +200,10 @@ uint32_t get(TVM *MV, uint32_t op, uint8_t cantBytes) {
         MV->registros[MBR] = valor;
     }
     else if (TOperando == REGISTRO) {
-        uint32_t reg = (op >> 16) & 0xFF;  // el nº de registro está acá
-        valor = MV->registros[reg] & 0x00FFFFFF;
+        uint32_t reg = op & 0xFF;
+        valor = MV->registros[reg];
     }
     else if (TOperando == INMEDIATO) {
-        // op = 0x01 + valor inmediato en los 3 bytes bajos
         valor = op & 0x00FFFFFF;
     }
 
@@ -240,4 +244,17 @@ void set(TVM *MV, uint32_t op1, uint32_t op2)
         uint32_t reg = op1 & 0x00FFFFFF;
         MV->registros[reg] = op2 & 0x00FFFFFF; // Ej : OP2 = 02 00 00 01 -> si le aplico Mid-High Mask => 00 00 00 01
     }
+}
+
+
+void setAC(TVM *VM,int32_t value){
+  VM->registros[AC] = value;
+}
+
+
+void setCC(TVM *MV,uint32_t value){
+  uint32_t esNegativo = (int32_t) value < 0;
+  uint32_t esCero = value == 0;
+  MV->registros[CC] = esNegativo << 31;
+  MV->registros[CC] = (esCero << 30) | MV->registros[CC];
 }

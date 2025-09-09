@@ -21,6 +21,8 @@
 #define TMEMORIA 0x03
 #define CS 26
 #define DS 27
+#define AC 16
+#define CC 17
 #define LAR 0
 #define MAR 1
 #define MBR 2
@@ -48,7 +50,7 @@ typedef struct{
 void inicializarVM(char * nombreArchivo,TVM*MV);
 uint32_t obtenerDireccionFisica(TVM * MV, uint32_t direccionLogica,int * error);
 uint8_t obtenerSumaBytes(TVM *MV);
-char *operacionDessambler(uint8_t codOp);
+char *operacionDisassembler(uint8_t codOp);
 void interpretaInstruccion(TVM *VM,uint8_t instruccion);
 uint32_t cargarOperando(uint32_t, uint8_t *, uint32_t, uint8_t);
 
@@ -56,5 +58,6 @@ uint32_t cargarOperando(uint32_t, uint8_t *, uint32_t, uint8_t);
 //Funciones especiales de seteo y obtencion de datos
 uint32_t get(TVM *MV, uint32_t op,uint8_t num);
 void set(TVM *MV, uint32_t op1, uint32_t op2);
-
+void setAC(TVM *VM,int32_t value);
+void setCC(TVM *MV,uint32_t value);
 #endif 
