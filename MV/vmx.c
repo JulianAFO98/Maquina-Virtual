@@ -23,13 +23,19 @@ int main(int argc, char *argv[])
             {
                 inicializarVM(argv[1], &VM);
                 while (VM.registros[IP] >= 0 && !error)
-                {                                                                              //
+                {                       
+                    //printf("IP antes: 0x%08X\n", VM.registros[IP]);                                                       //
                     direccionFisicaIP = obtenerDireccionFisica(&VM, VM.registros[IP], &error); // obtener instruccion a partir de la IP Logica Reg[3] es el reg IP
                     interpretaInstruccion(&VM, VM.memoria[direccionFisicaIP]);
-                    // If JMP Acomodar ip sino sumar bytes
-                    VM.registros[IP] += obtenerSumaBytes(&VM) + 1;
+                    // If JMP Acomodar ip sino sumar bytess
+                    // VM.registros[IP] += obtenerSumaBytes(&VM) + 1;
                     uint8_t op1 = (VM.registros[OP1] >> 24) & 0x3;
                     uint8_t op2 = (VM.registros[OP2] >> 24) & 0x3;
+                    
+                    printf("[%04X] ", VM.registros[IP]);
+                    for(int i=0;i<=obtenerSumaBytes(&VM); i++)
+                        printf("%X ", VM.memoria[direccionFisicaIP+i]);
+                    printf("\n");
                     // Debug por las dudas
                     // printf("IP logico: 0x%08X | Dir. fisica: 0x%08X | Instruccion: 0x%08X | op1=%d op2=%d\n", VM.registros[IP], direccionFisicaIP, VM.memoria[direccionFisicaIP], op1, op2);
                     // printf("0x%08X 0x%08X\n", VM.registros[5], VM.registros[6]);
@@ -57,8 +63,7 @@ int main(int argc, char *argv[])
                                 VM.registros[OP1],
                                 VM.memoria,
                                 direccionFisicaIP,
-                                op2 
-                            );
+                                op2);
                             VM.registros[OP2] = 0x0;
                         }
                     }
@@ -81,7 +86,14 @@ int main(int argc, char *argv[])
                     // printf("0x%08X 0x%08X\n", VM.registros[5], VM.registros[6]);
                     //  Operandos listos para operar
                     operaciones[VM.registros[OPC]](&VM);
-                    printf("%s\n", operacionDisassembler(VM.registros[OPC]));
+                   // printf("%s 0x%08X 0x%08X\n", operacionDisassembler(VM.registros[OPC]), VM.registros[OP1], VM.registros[OP2]);
+                    // Solo suma los bytes si NO fue salto
+                    if (!esSalto(VM.registros[OPC]) && VM.registros[IP] >= 0) {
+                   
+                        VM.registros[IP] += obtenerSumaBytes(&VM) + 1;
+                    }
+                 
+                 //   printf("IP despu2s: 0x%08X\n", VM.registros[IP]);
                 }
                 if (error == 1 && VM.registros[IP] != -1)
                 {

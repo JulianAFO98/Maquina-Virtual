@@ -70,31 +70,54 @@ void JZ(TVM *MV)
 {
     if (MV->registros[CC] == 0){
         MV->registros[IP] = get(MV,MV->registros[OP1],4);
+    } else {
+        MV->registros[IP] += obtenerSumaBytes(MV) + 1;
     }
 }
 void JP(TVM *MV)
 {
-    // code
+    if(MV->registros[CC] > 0){
+        MV->registros[IP] = get(MV,MV->registros[OP1], 4);
+    } else {
+        MV->registros[IP] += obtenerSumaBytes(MV) + 1;
+    }
 }
 void JN(TVM *MV)
 {
-    // code
+    if(MV->registros[CC] < 0){
+        MV->registros[IP] = get(MV,MV->registros[OP1], 4);
+    } else {
+        MV->registros[IP] += obtenerSumaBytes(MV) + 1;
+    }
 }
 void JNZ(TVM *MV)
 {
-    // code
+    printf("Ejecutando JNZ\n");
+    if (MV->registros[CC] != 0) {
+        MV->registros[IP] = get(MV, MV->registros[OP1], 4);
+    } else {
+        MV->registros[IP] += obtenerSumaBytes(MV) + 1;
+    }
 }
 void JNP(TVM *MV)
 {
-    // code
+    if(MV->registros[CC] <= 0){
+        MV->registros[IP] = get(MV,MV->registros[OP1], 4);
+    } else {
+        MV->registros[IP] += obtenerSumaBytes(MV) + 1;
+    }
 }
 void JNN(TVM *MV)
 {
-    // code
+    if(MV->registros[CC] >= 0){
+        MV->registros[IP] = get(MV,MV->registros[OP1], 4);
+    } else {
+        MV->registros[IP] += obtenerSumaBytes(MV) + 1;
+    }
 }
 void NOT(TVM *MV)
 {
-    // code
+    
 }
 void STOP(TVM *MV)
 {

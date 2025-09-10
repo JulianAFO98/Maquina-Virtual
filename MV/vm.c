@@ -166,53 +166,66 @@ uint32_t cargarOperando(uint32_t reg, uint8_t *memoria, uint32_t direccion, uint
     return inst;
 }
 
-
-uint32_t get(TVM *MV, uint32_t op, uint8_t cantBytes) {
+uint32_t get(TVM *MV, uint32_t op, uint8_t cantBytes)
+{
 
     uint32_t TOperando = (op & 0xFF000000) >> 24; // tipo de operando
     uint32_t valor = 0;
 
-    if (TOperando == TMEMORIA) {
+    if (TOperando == TMEMORIA)
+    {
         int error = 0;
         uint32_t segmento = (MV->registros[27] >> 16) & 0xFFFF; // selector de segmento (ej: DS = 0001)
 
-        uint32_t offset   = op & 0xFFFF;                        // offset lógico
+        uint32_t offset = op & 0xFFFF; // offset lógico
 
-        uint32_t regBase  = (op >> 16) & 0xFF;                  // registro base si hay (ej: 0D = EDX)
-
-
+        uint32_t regBase = (op >> 16) & 0xFF; // registro base si hay (ej: 0D = EDX)
 
         uint32_t dirLogica;
         if (regBase != 0)
-            dirLogica =  MV->registros[regBase] + offset;
+            dirLogica = MV->registros[regBase] + offset;
         else
             dirLogica = (segmento << 16) | offset;
-        
+
         uint32_t dirFisica = obtenerDireccionFisica(MV, dirLogica, &error);
-        for (int i = 0; i < cantBytes; i++) {
+        for (int i = 0; i < cantBytes; i++)
+        {
             valor = (valor << 8) | MV->memoria[dirFisica + i];
         }
-        
-      
+
         MV->registros[LAR] = dirLogica;
         MV->registros[MAR] = ((cantBytes << 16) & HIGH_MASK) | (dirFisica & LOW_MASK);
         MV->registros[MBR] = valor;
     }
-    else if (TOperando == REGISTRO) {
+    else if (TOperando == REGISTRO)
+    {
         uint32_t reg = op & 0xFF;
         valor = MV->registros[reg];
     }
-    else if (TOperando == INMEDIATO) {
+    else if (TOperando == INMEDIATO)
+    {
         valor = op & 0x00FFFFFF;
     }
 
     return valor;
 }
 
-
-
-
-
+int esSalto(uint32_t codOp)
+{
+    switch (codOp)
+    {
+        case 0x01: // JMP
+        case 0x02: // JZ
+        case 0x03: // JP
+        case 0x04: // JN
+        case 0x05: // JNZ
+        case 0x06: // JNP
+        case 0x07: // JNN
+            return 1;
+        default:
+            return 0;
+    }
+}
 
 void set(TVM *MV, uint32_t op1, uint32_t op2)
 {
@@ -220,12 +233,12 @@ void set(TVM *MV, uint32_t op1, uint32_t op2)
     if (TOperando == TMEMORIA)
     {
         int error = 0;
-        uint32_t segmento = (MV->registros[DS] >> 16) & 0xFFFF; // 0001 siempre 
+        uint32_t segmento = (MV->registros[DS] >> 16) & 0xFFFF; // 0001 siempre
         uint32_t offset = op1 & 0xFFFF;                         // offset de la dirección lógica
-        uint32_t regBase = (op1 >> 16) & 0xFF;                  //0D si voy con EDX
+        uint32_t regBase = (op1 >> 16) & 0xFF;                  // 0D si voy con EDX
         uint32_t dirLogica;
         if (regBase != 0)
-            dirLogica = (segmento << 16 ) | (MV->registros[regBase] + offset) ;
+            dirLogica = (segmento << 16) | (MV->registros[regBase] + offset);
         else
             dirLogica = (segmento << 16) | offset;
         uint32_t dirFisica = obtenerDireccionFisica(MV, dirLogica, &error);
@@ -235,7 +248,8 @@ void set(TVM *MV, uint32_t op1, uint32_t op2)
         MV->registros[MBR] = op2 & 0x00FFFFFF;                                      // Filtro los bytes que pertenecen al tipo de operando
         // se puede extraer y hacer un  prodimiento asigna memoria con LAR MAR Y MRB
         int32_t valor = MV->registros[MBR];
-        for (int i = 0; i < cantBytes; i++){
+        for (int i = 0; i < cantBytes; i++)
+        {
             MV->memoria[dirFisica + i] = (valor >> (8 * (cantBytes - 1 - i))) & 0xFF;
         }
     }
@@ -246,18 +260,20 @@ void set(TVM *MV, uint32_t op1, uint32_t op2)
     }
 }
 
-
-void setAC(TVM *VM,int32_t value){
-  VM->registros[AC] = value;
+void setAC(TVM *VM, int32_t value)
+{
+    VM->registros[AC] = value;
 }
 
-
-void setCC(TVM *MV,uint32_t value){
-   uint32_t cc = 0;
-    if (value < 0) {
+void setCC(TVM *MV, uint32_t value)
+{
+    uint32_t cc = 0;
+    if (value < 0)
+    {
         cc = cc | (1 << 31);
     }
-    if (value == 0) {
+    if (value == 0)
+    {
         cc = cc | (1 << 30);
     }
     MV->registros[CC] = cc;
