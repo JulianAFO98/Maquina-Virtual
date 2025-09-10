@@ -214,16 +214,16 @@ int esSalto(uint32_t codOp)
 {
     switch (codOp)
     {
-        case 0x01: // JMP
-        case 0x02: // JZ
-        case 0x03: // JP
-        case 0x04: // JN
-        case 0x05: // JNZ
-        case 0x06: // JNP
-        case 0x07: // JNN
-            return 1;
-        default:
-            return 0;
+    case 0x01: // JMP
+    case 0x02: // JZ
+    case 0x03: // JP
+    case 0x04: // JN
+    case 0x05: // JNZ
+    case 0x06: // JNP
+    case 0x07: // JNN
+        return 1;
+    default:
+        return 0;
     }
 }
 
@@ -260,6 +260,14 @@ void set(TVM *MV, uint32_t op1, uint32_t op2)
     }
 }
 
+void disassembler(TVM *MV, uint32_t direccionFisicaIP)
+{
+    printf("[%04X] ", MV->registros[IP]);
+    for (int i = 0; i <= obtenerSumaBytes(MV); i++)
+        printf("%X ", MV->memoria[direccionFisicaIP + i]);
+    printf("| %s 0x%08X 0x%08X\n", operacionDisassembler(MV->registros[OPC]), MV->registros[OP1], MV->registros[OP2]);
+}
+
 void setAC(TVM *VM, int32_t value)
 {
     VM->registros[AC] = value;
@@ -277,4 +285,5 @@ void setCC(TVM *MV, uint32_t value)
         cc = cc | (1 << 30);
     }
     MV->registros[CC] = cc;
+   // printf("CC = %d\n", MV->registros[CC]);
 }
