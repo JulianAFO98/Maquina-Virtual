@@ -273,17 +273,21 @@ void setAC(TVM *VM, int32_t value)
     VM->registros[AC] = value;
 }
 
-void setCC(TVM *MV, uint32_t value)
-{
-    uint32_t cc = 0;
-    if (value < 0)
-    {
-        cc = cc | (1 << 31); // 0x10000000
+void setCC(TVM* MV, uint32_t resultado) {                              
+    MV->registros[CC] = 0; 
+    int32_t valor_casteado = (int32_t) resultado;
+    //Se supone que seguimos buenas practicas, pero en nuestro no seguimos esas normas
+    if (valor_casteado == 0){
+        MV->registros[CC] = 0x40000000;
     }
-    if (value == 0) 
-    {
-        cc = cc | (1 << 30); //0x40000000 -> 0100 0000 0000 0000 0000 0000 0000 0000
+    else {
+        if (valor_casteado < 0)
+        {
+            MV->registros[CC] = 0x80000000;
+
+        }
+        else{
+            MV->registros[CC] = 0x0;
+        }
     }
-    MV->registros[CC] = cc;
-   // printf("CC = %d\n", MV->registros[CC]);
 }

@@ -92,8 +92,7 @@ void JN(TVM *MV)
 }
 void JNZ(TVM *MV)
 {
-    printf("Ejecutando JNZ\n");
-    if (!(MV->registros[CC] & 0x10000000)) {
+    if (MV->registros[CC]!=0x40000000) {
         MV->registros[IP] = get(MV, MV->registros[OP1], 4);
     } else {
         MV->registros[IP] += obtenerSumaBytes(MV) + 1;
@@ -172,10 +171,11 @@ void CMP(TVM *MV)
 {
     uint32_t op1 = MV->registros[OP1]; 
     uint32_t op2 = MV->registros[OP2]; 
-    int32_t val1 = get(MV, op1, 4);
-    int32_t val2 = get(MV, op2, 4);
+    int32_t val1 =  (int32_t) get(MV, op1, 4);
+    int32_t val2 =  (int32_t) get(MV, op2, 4);
     int32_t res = val1 - val2;
     setCC(MV,res);
+
 }
 void SHL(TVM *MV)
 {
