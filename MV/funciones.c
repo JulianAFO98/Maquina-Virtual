@@ -130,7 +130,7 @@ void ADD(TVM *MV)
     uint32_t op1 = MV->registros[OP1]; // operando destino
     uint32_t op2 = MV->registros[OP2]; // operando fuente
     int32_t val1 = get(MV, op1, 4);
-    int32_t val2 = get(MV, op2, 4);
+    int32_t val2 = (int16_t) get(MV, op2, 4);
     int32_t res = val1 + val2;
     setCC(MV,res);
     set(MV, op1, res);

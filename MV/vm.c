@@ -49,7 +49,6 @@ uint32_t obtenerDireccionFisica(TVM *MV, uint32_t direccionLogica, int *error)
 
     if (direccionFisica < direccionBase || direccionFisica + 3 > limiteSegmento)
     {
-        // error(1, )
         *error = 1;
     }
     return direccionFisica;

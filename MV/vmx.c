@@ -24,18 +24,10 @@ int main(int argc, char *argv[])
                 inicializarVM(argv[1], &VM);
                 while (VM.registros[IP] >= 0 && !error)
                 {                       
-                    //printf("IP antes: 0x%08X\n", VM.registros[IP]);                                                       //
                     direccionFisicaIP = obtenerDireccionFisica(&VM, VM.registros[IP], &error); // obtener instruccion a partir de la IP Logica Reg[3] es el reg IP
                     interpretaInstruccion(&VM, VM.memoria[direccionFisicaIP]);
-                    // If JMP Acomodar ip sino sumar bytess
-                    // VM.registros[IP] += obtenerSumaBytes(&VM) + 1;
                     uint8_t op1 = (VM.registros[OP1] >> 24) & 0x3;
                     uint8_t op2 = (VM.registros[OP2] >> 24) & 0x3;
-                    
-                    // Debug por las dudas
-                    // printf("IP logico: 0x%08X | Dir. fisica: 0x%08X | Instruccion: 0x%08X | op1=%d op2=%d\n", VM.registros[IP], direccionFisicaIP, VM.memoria[direccionFisicaIP], op1, op2);
-                    // printf("0x%08X 0x%08X\n", VM.registros[5], VM.registros[6]);
-                    // Valido que haya algun operando
                     if ((op1 != 0) && (op2 != 0))
                     {
                         uint32_t auxDireccion = direccionFisicaIP; // Variable auxiliar para no operar directamente desde direccionFisicaIP
@@ -63,34 +55,13 @@ int main(int argc, char *argv[])
                             VM.registros[OP2] = 0x0;
                         }
                     }
-
-                    /*printf("0x%08X 0x%08X\n", VM.registros[OP1], VM.registros[OP2]);
-                    if (direccionFisicaIP == 0x000000000)
-                    {
-                        VM.registros[13] = 0x00000FFF;
-                        uint32_t direFisica = 0x00001030; // EDX + 4
-                        MOV(&VM);
-                        printf("Debug MOV: Valor seteado en memoria[0x%04X]:\n", direccionFisicaIP);
-                        printf("Valor Tabla seg [0x%04X]:\n", (VM.tablaDescriptoresSegmentos[1]>>16));
-
-                        for(int i = direFisica;i<direFisica+4;i++){
-                            printf("0x%02X\n",VM.memoria[i]);
-                        }
-                        printf("MBR: 0x%08X\n", VM.registros[MBR]);
-                    }
-                    */
-                    // printf("0x%08X 0x%08X\n", VM.registros[5], VM.registros[6]);
-                    //  Operandos listos para operar
-
                     operaciones[VM.registros[OPC]](&VM);
                     disassembler(&VM, direccionFisicaIP);
-                    // Solo suma los bytes si NO fue salto
                     if (!esSalto(VM.registros[OPC]) && VM.registros[IP] >= 0) {
                    
                         VM.registros[IP] += obtenerSumaBytes(&VM) + 1;
                     }
                  
-                 //   printf("IP despu2s: 0x%08X\n", VM.registros[IP]);
                 }
                 if (error == 1 && VM.registros[IP] != -1)
                 {
