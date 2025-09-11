@@ -278,11 +278,11 @@ void setCC(TVM *MV, uint32_t value)
     uint32_t cc = 0;
     if (value < 0)
     {
-        cc = cc | (1 << 31);
+        cc = cc | (1 << 31); // 0x10000000
     }
-    if (value == 0)
+    if (value == 0) 
     {
-        cc = cc | (1 << 30);
+        cc = cc | (1 << 30); //0x40000000 -> 0100 0000 0000 0000 0000 0000 0000 0000
     }
     MV->registros[CC] = cc;
    // printf("CC = %d\n", MV->registros[CC]);
