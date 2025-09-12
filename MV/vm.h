@@ -16,8 +16,8 @@
 #define ML_MASK 0x000000FF // MId low mask -> byte menos significativo
 
 //Quizas sea mejor agruparlos en un typedef
-#define REGISTRO 0x01
-#define INMEDIATO 0x02
+#define TREGISTRO 0x01
+#define TINMEDIATO 0x02
 #define TMEMORIA 0x03
 #define CS 26
 #define DS 27

@@ -126,6 +126,31 @@ char *operacionDisassembler(uint8_t codOp)
     }
 }
 
+char *operandoDisassembler(uint8_t op)
+{
+    switch (op)
+    {
+    case 0xA:
+        return "EAX";
+    case 0xB:
+        return "EBX";
+    case 0xC:
+        return "ECX";
+    case 0xD:
+        return "EDX";
+    case 0xE:
+        return "EEX";
+    case 0xF:
+        return "EFX";
+    case 0x10:
+        return "EGX";
+    case 0x1B:
+        return "DS";
+    case 0x1A:
+        return "CS";
+    }
+}
+
 void interpretaInstruccion(TVM *MV, uint8_t instruccion)
 {
     MV->registros[OP1] = 0x0;
@@ -196,12 +221,12 @@ uint32_t get(TVM *MV, uint32_t op, uint8_t cantBytes)
         MV->registros[MAR] = ((cantBytes << 16) & HIGH_MASK) | (dirFisica & LOW_MASK);
         MV->registros[MBR] = valor;
     }
-    else if (TOperando == REGISTRO)
+    else if (TOperando == TREGISTRO)
     {
         uint32_t reg = op & 0xFF;
         valor = MV->registros[reg];
     }
-    else if (TOperando == INMEDIATO)
+    else if (TOperando == TINMEDIATO)
     {
         valor = op & 0x00FFFFFF;
     }
@@ -253,19 +278,70 @@ void set(TVM *MV, uint32_t op1, uint32_t op2)
             MV->memoria[dirFisica + i] = (valor >> (8 * (cantBytes - 1 - i))) & 0xFF;
         }
     }
-    else if (TOperando == REGISTRO)
+    else if (TOperando == TREGISTRO)
     {
         uint32_t reg = op1 & 0x00FFFFFF;
         MV->registros[reg] = op2;
     }
 }
 
+
 void disassembler(TVM *MV, uint32_t direccionFisicaIP)
 {
+    uint32_t tipo_operando = (MV->registros[OP1] & MH_MASK) >> 24;
+    uint32_t tipo_operando2 = (MV->registros[OP2] & MH_MASK) >> 24;
+    uint32_t reg1 = MV->registros[OP1] & 0xFF;
+    uint32_t reg2 = MV->registros[OP2] & 0xFF;
+    //Imprime direccion entre corchetes la instruccion en hexa y luego la instruccion en codigo assembler [xxxx] xx xx xx | MOV
     printf("[%04X] ", MV->registros[IP]);
-    for (int i = 0; i <= obtenerSumaBytes(MV); i++)
-        printf("%X ", MV->memoria[direccionFisicaIP + i]);
-    printf("| %s 0x%08X 0x%08X\n", operacionDisassembler(MV->registros[OPC]), MV->registros[OP1], MV->registros[OP2]);
+    for (int i = 0; i <= obtenerSumaBytes(MV); i++){
+        printf("%02X ", MV->memoria[direccionFisicaIP + i]);
+    }
+
+    for (int i = 0; i < (6 - obtenerSumaBytes(MV)) * 3; i++) { //Por ejemplo si la instruccion es de 3 bytes (6-3) * 3 = 9 => rellena con 9 espacios
+        printf(" ");
+    }
+    printf("%-6s ", operacionDisassembler(MV->registros[OPC]));
+
+    //Imprime la segunda parte del codigo en assembler dependiendo si es un operando de memoria, de registro, o inmediato
+    uint32_t registro;
+    uint32_t registro2;
+    if(tipo_operando == TMEMORIA)
+    {
+        registro = MV->registros[OP1] >> 16;
+        uint32_t offset = MV->registros[OP1] & 0x000000FF;
+        printf("[");
+        printf("%s",operandoDisassembler(registro));
+        if (offset != 0){
+            printf(" + %d", offset);
+        }
+        printf("], ");
+    }else if(tipo_operando == TREGISTRO){
+        registro = MV->registros[OP1] & 0x000000FF;
+        printf("%s, ", operandoDisassembler(registro));
+    }
+
+    //Se imprime la segunda parte del codigo en assembler
+    if(tipo_operando2 == TMEMORIA)
+    {
+        printf("entro\n");
+        registro = MV->registros[OP2] >> 16;
+        uint32_t offset = MV->registros[OP2] & 0x000000FF;
+        printf(" [");
+        printf("%s",operandoDisassembler(registro));
+        if (offset != 0){
+            printf(" + %d", offset);
+        }
+        printf("]\n ");
+    }else if(tipo_operando2 == TREGISTRO){
+        registro = MV->registros[OP2] & 0x000000FF;
+        printf("%s\n", operandoDisassembler(registro));
+    }else if(tipo_operando2 == TINMEDIATO){
+        uint32_t inmediato = (int16_t)get(MV, MV->registros[OP2], 4);
+        printf("%d\n", inmediato);
+    }else
+        printf("\n");
+
 }
 
 void setAC(TVM *VM, int32_t value)
