@@ -228,6 +228,7 @@ int esSalto(uint32_t codOp)
 
 void set(TVM *MV, uint32_t op1, uint32_t op2)
 {
+    
     uint32_t TOperando = (op1 & 0xFF000000) >> 24; // podriamos usar el Operando ya guardado en la MV
     if (TOperando == TMEMORIA)
     {
@@ -255,7 +256,7 @@ void set(TVM *MV, uint32_t op1, uint32_t op2)
     else if (TOperando == REGISTRO)
     {
         uint32_t reg = op1 & 0x00FFFFFF;
-        MV->registros[reg] = op2 & 0x00FFFFFF; // Ej : OP2 = 02 00 00 01 -> si le aplico Mid-High Mask => 00 00 00 01
+        MV->registros[reg] = op2;
     }
 }
 
@@ -275,7 +276,7 @@ void setAC(TVM *VM, int32_t value)
 void setCC(TVM* MV, uint32_t resultado) {                              
     MV->registros[CC] = 0; 
     int32_t valor_casteado = (int32_t) resultado;
-    //Se supone que seguimos buenas practicas, pero en nuestro no seguimos esas normas
+    //Se supone que seguimos buenas practicas, pero en nuestro proyecto no seguimos esas normas
     if (valor_casteado == 0){
         MV->registros[CC] = 0x40000000;
     }

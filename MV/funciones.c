@@ -12,11 +12,11 @@ void SYS(TVM *MV)
 {
     uint32_t error = 0;
     uint32_t valor = 0;
-    uint32_t dirFisica = obtenerDireccionFisica(MV,MV->registros[EDX],&error);
-    int32_t op1 = get(MV, MV->registros[OP1], 4); // 0x1 READ 0x2 WRITE
-    uint32_t bytesWR = MV->registros[ECX] & 0xFFFF0000; // obtengo los datos del LDH
+    uint32_t dirFisica = obtenerDireccionFisica(MV, MV->registros[EDX], &error);
+    int32_t op1 = get(MV, MV->registros[OP1], 4);            // 0x1 READ 0x2 WRITE
+    uint32_t bytesWR = MV->registros[ECX] & 0xFFFF0000;      // obtengo los datos del LDH
     uint32_t cuantasVeces = MV->registros[ECX] & 0x0000FFFF; // obtengo los datos del LDL
-    uint32_t formato = MV->registros[EAX]; // formato decimal 0x01 formato 0x02 caracter formato 0x04 octal formato 0x08 hexa formato 0x10 binario
+    uint32_t formato = MV->registros[EAX];                   // formato decimal 0x01 formato 0x02 caracter formato 0x04 octal formato 0x08 hexa formato 0x10 binario
     for (uint32_t i = 0; i < cuantasVeces; i++)
     {
         if (op1 == 0x1)
@@ -68,54 +68,76 @@ void JMP(TVM *MV)
 }
 void JZ(TVM *MV)
 {
-    if (MV->registros[CC] & 0x40000000){
-        MV->registros[IP] = get(MV,MV->registros[OP1],4);
-    } else {
+    if (MV->registros[CC] & 0x40000000)
+    {
+        MV->registros[IP] = get(MV, MV->registros[OP1], 4);
+    }
+    else
+    {
         MV->registros[IP] += obtenerSumaBytes(MV) + 1;
     }
 }
 void JP(TVM *MV)
 {
-    if(MV->registros[CC] & 0x40000000){
-        MV->registros[IP] = get(MV,MV->registros[OP1], 4);
-    } else {
+    if (MV->registros[CC] == 0)
+    {
+        MV->registros[IP] = get(MV, MV->registros[OP1], 4);
+    }
+    else
+    {
         MV->registros[IP] += obtenerSumaBytes(MV) + 1;
     }
 }
 void JN(TVM *MV)
 {
-    if(MV->registros[CC] < 0){
-        MV->registros[IP] = get(MV,MV->registros[OP1], 4);
-    } else {
+    if (MV->registros[CC] == 0x80000000)
+    {
+        MV->registros[IP] = get(MV, MV->registros[OP1], 4);
+    }
+    else
+    {
         MV->registros[IP] += obtenerSumaBytes(MV) + 1;
     }
 }
 void JNZ(TVM *MV)
 {
-    if (MV->registros[CC]!=0x40000000) {
+    if (MV->registros[CC] != 0x40000000)
+    {
         MV->registros[IP] = get(MV, MV->registros[OP1], 4);
-    } else {
+    }
+    else
+    {
         MV->registros[IP] += obtenerSumaBytes(MV) + 1;
     }
 }
 void JNP(TVM *MV)
 {
-    if(MV->registros[CC] <= 0){
-        MV->registros[IP] = get(MV,MV->registros[OP1], 4);
-    } else {
+    if (MV->registros[CC] != 0)
+    {
+        MV->registros[IP] = get(MV, MV->registros[OP1], 4);
+    }
+    else
+    {
         MV->registros[IP] += obtenerSumaBytes(MV) + 1;
     }
 }
 void JNN(TVM *MV)
 {
-    if(MV->registros[CC] >= 0){
-        MV->registros[IP] = get(MV,MV->registros[OP1], 4);
-    } else {
+    if (MV->registros[CC] != 0x80000000)
+    {
+        MV->registros[IP] = get(MV, MV->registros[OP1], 4);
+    }
+    else
+    {
         MV->registros[IP] += obtenerSumaBytes(MV) + 1;
     }
 }
 void NOT(TVM *MV)
 {
+    int32_t val = get(MV, MV->registros[OP1], 4);
+    int32_t valNegado = ~val;
+    set(MV, MV->registros[OP1], valNegado);
+    setCC(MV, valNegado);
 }
 void STOP(TVM *MV)
 {
@@ -130,80 +152,106 @@ void ADD(TVM *MV)
     uint32_t op1 = MV->registros[OP1]; // operando destino
     uint32_t op2 = MV->registros[OP2]; // operando fuente
     int32_t val1 = get(MV, op1, 4);
-    int32_t val2 = (int16_t) get(MV, op2, 4);
+    int32_t val2 = (int16_t)get(MV, op2, 4);
     int32_t res = val1 + val2;
-    setCC(MV,res);
+    setCC(MV, res);
     set(MV, op1, res);
 }
 void SUB(TVM *MV)
 {
-   uint32_t op1 = MV->registros[OP1]; 
-    uint32_t op2 = MV->registros[OP2]; 
+    uint32_t op1 = MV->registros[OP1];
+    uint32_t op2 = MV->registros[OP2];
     int32_t val1 = get(MV, op1, 4);
     int32_t val2 = get(MV, op2, 4);
     int32_t res = val1 - val2;
-    setCC(MV,res);
+    setCC(MV, res);
     set(MV, op1, res);
 }
 void MUL(TVM *MV)
 {
-    uint32_t op1 = MV->registros[OP1]; 
-    uint32_t op2 = MV->registros[OP2]; 
+    uint32_t op1 = MV->registros[OP1];
+    uint32_t op2 = MV->registros[OP2];
     int32_t val1 = get(MV, op1, 4);
     int32_t val2 = get(MV, op2, 4);
     int32_t res = val1 * val2;
-    setCC(MV,res);
+    setCC(MV, res);
     set(MV, op1, res);
 }
 void DIV(TVM *MV)
 {
-    uint32_t op1 = MV->registros[OP1]; 
-    uint32_t op2 = MV->registros[OP2]; 
+    uint32_t op1 = MV->registros[OP1];
+    uint32_t op2 = MV->registros[OP2];
     int32_t val1 = get(MV, op1, 4);
     int32_t val2 = get(MV, op2, 4);
-    //Controlar div 0
+    // Controlar div 0
     int32_t res = val1 / val2;
     set(MV, op1, res);
-    setCC(MV,res);
-    setAC(MV,val1 % val2);
+    setCC(MV, res);
+    setAC(MV, val1 % val2);
 }
 void CMP(TVM *MV)
 {
-    uint32_t op1 = MV->registros[OP1]; 
-    uint32_t op2 = MV->registros[OP2]; 
-    int32_t val1 =  (int32_t) get(MV, op1, 4);
-    int32_t val2 =  (int32_t) get(MV, op2, 4);
+    uint32_t op1 = MV->registros[OP1];
+    uint32_t op2 = MV->registros[OP2];
+    int32_t val1 = (int32_t)get(MV, op1, 4);
+    int32_t val2 = (int32_t)get(MV, op2, 4);
     int32_t res = val1 - val2;
-    setCC(MV,res);
-
+    setCC(MV, res);
 }
 void SHL(TVM *MV)
 {
-    // code
+    int32_t op1 = get(MV, MV->registros[OP1], 4);
+    int32_t op2 = get(MV, MV->registros[OP2], 4);
+    uint32_t desplazado = op1 << op2;
+    set(MV, MV->registros[OP1], desplazado);
 }
 void SHR(TVM *MV)
 {
-    // code
+    // verificar mejor de todas formas este metodo
+    int32_t op1 = get(MV, MV->registros[OP1], 4);
+    int32_t op2 = get(MV, MV->registros[OP2], 4);
+    uint32_t desplazado = op1 >> op2;
+    set(MV, MV->registros[OP1], desplazado);
 }
 void SAR(TVM *MV)
 {
-    // code
+    // Checkear por las dudas
+    int32_t op1 = get(MV, MV->registros[OP1], 4);
+    int32_t op2 = get(MV, MV->registros[OP2], 4);
+    int16_t casted = op1 & 0xFFFF;
+    uint32_t desplazado = casted >> op2;
+    set(MV, MV->registros[OP1], desplazado);
 }
 void AND(TVM *MV)
 {
-    // code
+    int32_t op1 = get(MV, MV->registros[OP1], 4);
+    int32_t op2 = get(MV, MV->registros[OP2], 4);
+    uint32_t res = op1 & op2;
+    set(MV, MV->registros[OP1], res);
 }
 void OR(TVM *MV)
 {
-    // code
+
+    int32_t op1 = get(MV, MV->registros[OP1], 4);
+    int32_t op2 = get(MV, MV->registros[OP2], 4);
+    uint32_t res = op1 | op2;
+    set(MV, MV->registros[OP1], res);
+
 }
 void XOR(TVM *MV)
 {
-    // code
+    int32_t op1 = get(MV, MV->registros[OP1], 4);
+    int32_t op2 = get(MV, MV->registros[OP2], 4);
+    uint32_t res = op1 ^ op2;
+    set(MV, MV->registros[OP1], res);
 }
 void SWAP(TVM *MV)
 {
-    // code
+    int32_t op1 = get(MV, MV->registros[OP1], 4);
+    int32_t op2 = get(MV, MV->registros[OP2], 4);
+    set(MV,MV->registros[OP2],op1); // operando y valor
+    set(MV,MV->registros[OP1],op2);
+
 }
 void LDL(TVM *MV)
 {
@@ -220,5 +268,7 @@ void LDH(TVM *MV)
 }
 void RND(TVM *MV)
 {
-    // code
+    srand(time(NULL));
+    int random = rand() % get(MV, MV->registros[OP2], 4);
+    set(MV,MV->registros[OP1],random);
 }

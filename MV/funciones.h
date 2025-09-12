@@ -2,7 +2,7 @@
 #define FUNCIONES_H
 
 #include "vm.h"
-
+#include <time.h>
 
 void SYS(TVM *MV);
 void JMP(TVM *MV);
