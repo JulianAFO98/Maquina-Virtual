@@ -13,7 +13,6 @@ uint32_t cargarOperando(uint32_t, uint8_t *, uint32_t, uint8_t);
 int main(int argc, char *argv[])
 {
     TVM VM;
-    int error = 0;
     uint32_t direccionFisicaIP;
     if (argc >= 2 && argc < 4)
     {
@@ -22,9 +21,9 @@ int main(int argc, char *argv[])
             if (esProgramaValido(argv[1])) // Esto ya dentro del archivo mira si lleva VMX25 en los primeros 5 bytes
             {
                 inicializarVM(argv[1], &VM);
-                while (VM.registros[IP] >= 0 && !error)
-                {                       
-                    direccionFisicaIP = obtenerDireccionFisica(&VM, VM.registros[IP], &error); // obtener instruccion a partir de la IP Logica Reg[3] es el reg IP
+                while (VM.registros[IP] >= 0 && !VM.error)
+                {      
+                    direccionFisicaIP = obtenerDireccionFisica(&VM, VM.registros[IP]); // obtener instruccion a partir de la IP Logica Reg[3] es el reg IP
                     interpretaInstruccion(&VM, VM.memoria[direccionFisicaIP]);
                     uint8_t op1 = (VM.registros[OP1] >> 24) & 0x3;
                     uint8_t op2 = (VM.registros[OP2] >> 24) & 0x3;
@@ -55,7 +54,13 @@ int main(int argc, char *argv[])
                             VM.registros[OP2] = 0x0;
                         }
                     }
-                    operaciones[VM.registros[OPC]](&VM);
+                    
+                    if(operaciones[VM.registros[OPC]] != NULL){
+                        operaciones[VM.registros[OPC]](&VM);
+                    }else{
+                        VM.error = 3;
+                    }
+                    
                     disassembler(&VM, direccionFisicaIP);
                     if (!esSalto(VM.registros[OPC]) && VM.registros[IP] >= 0) {
                    
@@ -63,10 +68,9 @@ int main(int argc, char *argv[])
                     }
                  
                 }
-                if (error == 1 && VM.registros[IP] != -1)
-                {
-                    printf("Segmentation fault");
-                }
+                if (VM.error && VM.registros[IP] != -1)
+                   mostrarError(VM.error);
+                
             }
             else
                 printf("La cabecera del archivo no lleva VMX25 o el archivo no existe");

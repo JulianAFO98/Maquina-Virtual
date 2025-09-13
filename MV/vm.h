@@ -14,7 +14,7 @@
 #define LOW_MASK 0x0000FFFF //2 Bytes menos significativos
 #define MH_MASK 0xFF000000 // Mid high mask -> byte mas significativo
 #define ML_MASK 0x000000FF // MId low mask -> byte menos significativo
-
+#define AH_MASK 0x00FFFFFF
 //Quizas sea mejor agruparlos en un typedef
 #define TREGISTRO 0x01
 #define TINMEDIATO 0x02
@@ -41,6 +41,7 @@
 
 
 typedef struct{
+    uint8_t error;
     uint8_t memoria[MEMORIA];
     uint32_t tablaDescriptoresSegmentos[CANT_TABLA];
     int32_t registros[CANT_REGISTROS];
@@ -48,14 +49,14 @@ typedef struct{
 
 
 void inicializarVM(char * nombreArchivo,TVM*MV);
-uint32_t obtenerDireccionFisica(TVM * MV, uint32_t direccionLogica,int * error);
+uint32_t obtenerDireccionFisica(TVM * MV, uint32_t direccionLogica);
 uint8_t obtenerSumaBytes(TVM *MV);
 char *operacionDisassembler(uint8_t codOp);
 void interpretaInstruccion(TVM *VM,uint8_t instruccion);
 uint32_t cargarOperando(uint32_t, uint8_t *, uint32_t, uint8_t);
 int esSalto(uint32_t codOp);
 void disassembler(TVM *MV, uint32_t direccionFisicaIP);
-
+void mostrarError(uint8_t error);
 
 //Funciones especiales de seteo y obtencion de datos
 uint32_t get(TVM *MV, uint32_t op,uint8_t num);

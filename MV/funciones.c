@@ -10,12 +10,11 @@ void (*operaciones[32])(TVM *MV) = {
 
 void SYS(TVM *MV)
 {
-    uint32_t error = 0;
     uint32_t valor = 0;
-    uint32_t dirFisica = obtenerDireccionFisica(MV, MV->registros[EDX], &error);
+    uint32_t dirFisica = obtenerDireccionFisica(MV, MV->registros[EDX]);
     int32_t op1 = get(MV, MV->registros[OP1], 4);            // 0x1 READ 0x2 WRITE
-    uint32_t bytesWR = MV->registros[ECX] & 0xFFFF0000;      // obtengo los datos del LDH
-    uint32_t cuantasVeces = MV->registros[ECX] & 0x0000FFFF; // obtengo los datos del LDL
+    uint32_t bytesWR = MV->registros[ECX] & HIGH_MASK;      // obtengo los datos del LDH
+    uint32_t cuantasVeces = MV->registros[ECX] & LOW_MASK; // obtengo los datos del LDL
     uint32_t formato = MV->registros[EAX];                   // formato decimal 0x01 formato 0x02 caracter formato 0x04 octal formato 0x08 hexa formato 0x10 binario
     for (uint32_t i = 0; i < cuantasVeces; i++)
     {
@@ -40,7 +39,7 @@ void SYS(TVM *MV)
                 valor = strtol(bin, NULL, 2);
             }
             for (int i = 0; i < 4; i++)
-                MV->memoria[dirFisica + i] = (valor >> (8 * (3 - i))) & 0xFF;
+                MV->memoria[dirFisica + i] = (valor >> (8 * (3 - i))) & ML_MASK;  // 0xFF
         }
         else if (op1 == 0x2)
         {
@@ -145,6 +144,7 @@ void STOP(TVM *MV)
 }
 void MOV(TVM *MV)
 {
+
     set(MV, MV->registros[OP1], get(MV, MV->registros[OP2], 4));
 }
 void ADD(TVM *MV)
@@ -152,7 +152,7 @@ void ADD(TVM *MV)
     uint32_t op1 = MV->registros[OP1]; // operando destino
     uint32_t op2 = MV->registros[OP2]; // operando fuente
     int32_t val1 = get(MV, op1, 4);
-    int32_t val2 = (int16_t)get(MV, op2, 4);
+    int32_t val2 = get(MV, op2, 4);
     int32_t res = val1 + val2;
     setCC(MV, res);
     set(MV, op1, res);
@@ -183,11 +183,14 @@ void DIV(TVM *MV)
     uint32_t op2 = MV->registros[OP2];
     int32_t val1 = get(MV, op1, 4);
     int32_t val2 = get(MV, op2, 4);
-    // Controlar div 0
-    int32_t res = val1 / val2;
-    set(MV, op1, res);
-    setCC(MV, res);
-    setAC(MV, val1 % val2);
+    if (val2 != 0){
+        int32_t res = val1 / val2;
+        set(MV, op1, res);
+        setCC(MV, res);
+        setAC(MV, val1 % val2);
+    }else{
+       MV->error = 2;
+    }
 }
 void CMP(TVM *MV)
 {
@@ -218,7 +221,7 @@ void SAR(TVM *MV)
     // Checkear por las dudas
     int32_t op1 = get(MV, MV->registros[OP1], 4);
     int32_t op2 = get(MV, MV->registros[OP2], 4);
-    int16_t casted = op1 & 0xFFFF;
+    int16_t casted = op1 & LOW_MASK; // aca estaba 0xFFFF
     uint32_t desplazado = casted >> op2;
     set(MV, MV->registros[OP1], desplazado);
 }
@@ -255,16 +258,18 @@ void SWAP(TVM *MV)
 }
 void LDL(TVM *MV)
 {
+    //ver esto puede ser LDL [0],3??
     int32_t op1 = MV->registros[OP1];
     int32_t op2 = MV->registros[OP2];
-    int32_t reg = MV->registros[OP1] & 0xFFFF;
-    MV->registros[reg] = (MV->registros[reg] & 0xFFFF0000) | (op2 & 0xFFFF);
+    int32_t reg = MV->registros[OP1] & LOW_MASK; // aca estaba 0xFFFF
+    MV->registros[reg] = (MV->registros[reg] & HIGH_MASK) | (op2 & LOW_MASK);  //  0xFFFF0000  0xFFFF
 }
 void LDH(TVM *MV)
 {
-    int32_t reg = MV->registros[OP1] & 0xFFFF;
-    int32_t valor = MV->registros[OP2] & 0xFFFF;
-    MV->registros[reg] = (MV->registros[reg] & 0x0000FFFF) | (valor << 16);
+    //ver esto puede ser LDL [0],3??
+    int32_t reg = MV->registros[OP1] & LOW_MASK;  // 0xFFFF
+    int32_t valor = MV->registros[OP2] & LOW_MASK;// 0xFFFF
+    MV->registros[reg] = (MV->registros[reg] & LOW_MASK) | (valor << 16); // 0x0000FFFF
 }
 void RND(TVM *MV)
 {
