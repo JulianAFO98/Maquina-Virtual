@@ -59,7 +59,7 @@ void disassembler(TVM *MV, uint32_t direccionFisicaIP);
 void mostrarError(uint8_t error);
 
 //Funciones especiales de seteo y obtencion de datos
-uint32_t get(TVM *MV, uint32_t op,uint8_t num);
+int32_t get(TVM *MV, uint32_t op,uint8_t num);
 void set(TVM *MV, uint32_t op1, uint32_t op2);
 void setAC(TVM *VM,int32_t value);
 void setCC(TVM *MV,uint32_t value);

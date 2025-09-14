@@ -196,7 +196,7 @@ uint32_t cargarOperando(uint32_t reg, uint8_t *memoria, uint32_t direccion, uint
     return inst;
 }
 
-uint32_t get(TVM *MV, uint32_t op, uint8_t cantBytes)
+int32_t get(TVM *MV, uint32_t op, uint8_t cantBytes)
 {
 
     uint32_t TOperando = (op & MH_MASK) >> 24; // tipo de operando // 0xFF000000
@@ -234,10 +234,11 @@ uint32_t get(TVM *MV, uint32_t op, uint8_t cantBytes)
     }
     else if (TOperando == TINMEDIATO)
     {
-        valor = op & AH_MASK; // 0x00FFFFFF
+        int16_t inmediato16 = (int16_t)(op & LOW_MASK); // tomo los 16 bits bajos y extiendo signo
+        valor = (int32_t)inmediato16;
     }
 
-    return valor;
+    return (int32_t)valor;
 }
 
 int esSalto(uint32_t codOp)
@@ -259,11 +260,9 @@ int esSalto(uint32_t codOp)
 
 void set(TVM *MV, uint32_t op1, uint32_t op2)
 {
-    
     uint32_t TOperando = (op1 & MH_MASK) >> 24; // podriamos usar el Operando ya guardado en la MV // 0xFF000000
     if (TOperando == TMEMORIA)
     {
-        int error = 0;
         uint32_t segmento = (MV->registros[DS] >> 16) & LOW_MASK; // 0001 siempre // 0xFFFF
         uint32_t offset = op1 & LOW_MASK;                         // offset de la dirección lógica // 0xFFFF
         uint32_t regBase = (op1 >> 16) & ML_MASK;                  // 0D si voy con EDX // 0xFF
@@ -278,7 +277,7 @@ void set(TVM *MV, uint32_t op1, uint32_t op2)
         MV->registros[MAR] = ((0x0004 << 16) & HIGH_MASK) | (dirFisica & LOW_MASK); // Cargo en los 2 byte mas significativos la cantidad de bytes en memoria y en los menos significativos la direccion fisica
         MV->registros[MBR] = op2;     // 0x00FFFFFF     // ojo aca le saque la mascara   // Filtro los bytes que pertenecen al tipo de operando
         // se puede extraer y hacer un  prodimiento asigna memoria con LAR MAR Y MRB
-        int32_t valor = MV->registros[MBR];
+        uint32_t valor = (uint32_t)op2;
         for (int i = 0; i < cantBytes; i++)
         {
             MV->memoria[dirFisica + i] = (valor >> (8 * (cantBytes - 1 - i))) & 0xFF;
