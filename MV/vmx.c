@@ -8,7 +8,6 @@
 
 uint8_t esProgramaValido(char *nombreArchivo);
 uint8_t comprobarExtension(char *nombreArchivo);
-uint32_t cargarOperando(uint32_t, uint8_t *, uint32_t, uint8_t);
 
 int main(int argc, char *argv[])
 {
@@ -25,48 +24,15 @@ int main(int argc, char *argv[])
                 {      
                     direccionFisicaIP = obtenerDireccionFisica(&VM, VM.registros[IP]); // obtener instruccion a partir de la IP Logica Reg[3] es el reg IP
                     interpretaInstruccion(&VM, VM.memoria[direccionFisicaIP]);
-                    uint8_t op1 = (VM.registros[OP1] >> 24) & 0x3;
-                    uint8_t op2 = (VM.registros[OP2] >> 24) & 0x3;
-                    if ((op1 != 0) && (op2 != 0))
-                    {
-                        uint32_t auxDireccion = direccionFisicaIP; // Variable auxiliar para no operar directamente desde direccionFisicaIP
-                        if (op2 != 0)
-                        {
-                            VM.registros[OP2] = cargarOperando(VM.registros[OP2], VM.memoria, direccionFisicaIP, op2);
-                            auxDireccion += op2;
-                        }
-
-                        if (op1 != 0)
-                        {
-                            VM.registros[OP1] = cargarOperando(VM.registros[OP1], VM.memoria, direccionFisicaIP + op2, op1);
-                        }
-                    }
-                    else
-                    {
-                        if ((op1 == 0) && (op2 != 0))
-                        {
-                            VM.registros[OP1] = VM.registros[OP2];
-                            VM.registros[OP1] = cargarOperando(
-                                VM.registros[OP1],
-                                VM.memoria,
-                                direccionFisicaIP,
-                                op2);
-                            VM.registros[OP2] = 0x0;
-                        }
-                    }
-                    
+                    cargarAmbosOperandos(&VM,direccionFisicaIP);
                     if(operaciones[VM.registros[OPC]] != NULL){
                         operaciones[VM.registros[OPC]](&VM);
                     }else{
                         VM.error = 3;
                     }
-                    
                     disassembler(&VM, direccionFisicaIP);
-                    if (!esSalto(VM.registros[OPC]) && VM.registros[IP] >= 0) {
-                   
+                    if (!esSalto(VM.registros[OPC]) && VM.registros[IP] >= 0) 
                         VM.registros[IP] += obtenerSumaBytes(&VM) + 1;
-                    }
-                 
                 }
                 if (VM.error && VM.registros[IP] != -1)
                    mostrarError(VM.error);

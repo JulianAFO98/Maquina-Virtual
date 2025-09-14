@@ -42,34 +42,31 @@ void inicializarVM(char *nombreArchivo, TVM *VM)
 
 uint32_t obtenerDireccionFisica(TVM *MV, uint32_t direccionLogica)
 {
-    uint16_t segmento = direccionLogica >> 16; // Obtengo el 0001 o el 0000 del codigo de segmento
+    uint16_t segmento = direccionLogica >> 16;                                            // Obtengo el 0001 o el 0000 del codigo de segmento
     uint32_t direccionBase = (MV->tablaDescriptoresSegmentos[segmento] >> 16) & LOW_MASK; // 0xFFFF
-    uint32_t offSet = direccionLogica & LOW_MASK; // 0x0000FFFF
+    uint32_t offSet = direccionLogica & LOW_MASK;                                         // 0x0000FFFF
     uint32_t direccionFisica = direccionBase + offSet;
     uint32_t limiteSegmento = MV->tablaDescriptoresSegmentos[segmento] & LOW_MASK; // 0xFFFF
-
     if (direccionFisica < direccionBase || direccionFisica + 3 > limiteSegmento)
-    {
         MV->error = 1;
-    }
     return direccionFisica;
 }
 
 void mostrarError(uint8_t error)
 {
-    switch(error){
-        case 1:
-            printf("Segmentation fault");
-            break;
-        case 2:
-            printf("No es posible dividir por 0");
-            break;
-        case 3:
-            printf("Operacion no valida");
-            break;
+    switch (error)
+    {
+    case 1:
+        printf("Segmentation fault");
+        break;
+    case 2:
+        printf("No es posible dividir por 0");
+        break;
+    case 3:
+        printf("Operacion no valida");
+        break;
     }
 }
-
 
 char *operacionDisassembler(uint8_t codOp)
 {
@@ -196,6 +193,34 @@ uint32_t cargarOperando(uint32_t reg, uint8_t *memoria, uint32_t direccion, uint
     return inst;
 }
 
+void cargarAmbosOperandos(TVM *VM, uint32_t direccionFisicaIP)
+{
+    uint8_t op1 = (VM->registros[OP1] >> 24) & 0x3;
+    uint8_t op2 = (VM->registros[OP2] >> 24) & 0x3;
+    if ((op1 != 0) && (op2 != 0))
+    {
+        uint32_t auxDireccion = direccionFisicaIP; // Variable auxiliar para no operar directamente desde direccionFisicaIP
+        if (op2 != 0)
+            VM->registros[OP2] = cargarOperando(VM->registros[OP2], VM->memoria, direccionFisicaIP, op2);
+            auxDireccion += op2;
+        if (op1 != 0)
+            VM->registros[OP1] = cargarOperando(VM->registros[OP1], VM->memoria, direccionFisicaIP + op2, op1);
+    }
+    else
+    {
+        if ((op1 == 0) && (op2 != 0))
+        {
+            VM->registros[OP1] = VM->registros[OP2];
+            VM->registros[OP1] = cargarOperando(
+                VM->registros[OP1],
+                VM->memoria,
+                direccionFisicaIP,
+                op2);
+            VM->registros[OP2] = 0x0;
+        }
+    }
+}
+
 int32_t get(TVM *MV, uint32_t op, uint8_t cantBytes)
 {
 
@@ -265,7 +290,7 @@ void set(TVM *MV, uint32_t op1, uint32_t op2)
     {
         uint32_t segmento = (MV->registros[DS] >> 16) & LOW_MASK; // 0001 siempre // 0xFFFF
         uint32_t offset = op1 & LOW_MASK;                         // offset de la dirección lógica // 0xFFFF
-        uint32_t regBase = (op1 >> 16) & ML_MASK;                  // 0D si voy con EDX // 0xFF
+        uint32_t regBase = (op1 >> 16) & ML_MASK;                 // 0D si voy con EDX // 0xFF
         uint32_t dirLogica;
         if (regBase != 0)
             dirLogica = (segmento << 16) | (MV->registros[regBase] + offset);
@@ -275,7 +300,7 @@ void set(TVM *MV, uint32_t op1, uint32_t op2)
         uint32_t cantBytes = 4; // deberia ser 4 siempre sujeto a cambios por parte 2
         MV->registros[LAR] = dirLogica;
         MV->registros[MAR] = ((0x0004 << 16) & HIGH_MASK) | (dirFisica & LOW_MASK); // Cargo en los 2 byte mas significativos la cantidad de bytes en memoria y en los menos significativos la direccion fisica
-        MV->registros[MBR] = op2;     // 0x00FFFFFF     // ojo aca le saque la mascara   // Filtro los bytes que pertenecen al tipo de operando
+        MV->registros[MBR] = op2;                                                   // 0x00FFFFFF     // ojo aca le saque la mascara   // Filtro los bytes que pertenecen al tipo de operando
         // se puede extraer y hacer un  prodimiento asigna memoria con LAR MAR Y MRB
         uint32_t valor = (uint32_t)op2;
         for (int i = 0; i < cantBytes; i++)
@@ -290,63 +315,72 @@ void set(TVM *MV, uint32_t op1, uint32_t op2)
     }
 }
 
-
 void disassembler(TVM *MV, uint32_t direccionFisicaIP)
 {
     uint32_t tipo_operando = (MV->registros[OP1] & MH_MASK) >> 24;
     uint32_t tipo_operando2 = (MV->registros[OP2] & MH_MASK) >> 24;
     uint32_t reg1 = MV->registros[OP1] & ML_MASK; // 0xFF
     uint32_t reg2 = MV->registros[OP2] & ML_MASK; // 0xFF
-    //Imprime direccion entre corchetes la instruccion en hexa y luego la instruccion en codigo assembler [xxxx] xx xx xx | MOV
+    // Imprime direccion entre corchetes la instruccion en hexa y luego la instruccion en codigo assembler [xxxx] xx xx xx | MOV
     printf("[%04X] ", MV->registros[IP]);
-    for (int i = 0; i <= obtenerSumaBytes(MV); i++){
+    for (int i = 0; i <= obtenerSumaBytes(MV); i++)
+    {
         printf("%02X ", MV->memoria[direccionFisicaIP + i]);
     }
 
-    for (int i = 0; i < (6 - obtenerSumaBytes(MV)) * 3; i++) { //Por ejemplo si la instruccion es de 3 bytes (6-3) * 3 = 9 => rellena con 9 espacios
+    for (int i = 0; i < (6 - obtenerSumaBytes(MV)) * 3; i++)
+    { // Por ejemplo si la instruccion es de 3 bytes (6-3) * 3 = 9 => rellena con 9 espacios
         printf(" ");
     }
     printf("%-6s ", operacionDisassembler(MV->registros[OPC]));
 
-    //Imprime la segunda parte del codigo en assembler dependiendo si es un operando de memoria, de registro, o inmediato
+    // Imprime la segunda parte del codigo en assembler dependiendo si es un operando de memoria, de registro, o inmediato
     uint32_t registro;
     uint32_t registro2;
-    if(tipo_operando == TMEMORIA)
+    if (tipo_operando == TMEMORIA)
     {
         registro = MV->registros[OP1] >> 16;
         uint32_t offset = MV->registros[OP1] & ML_MASK; // 0x000000FF
         printf("[");
-        printf("%s",operandoDisassembler(registro));
-        if (offset != 0){
+        printf("%s", operandoDisassembler(registro));
+        if (offset != 0)
+        {
             printf(" + %d", offset);
         }
         printf("], ");
-    }else if(tipo_operando == TREGISTRO){
+    }
+    else if (tipo_operando == TREGISTRO)
+    {
         registro = MV->registros[OP1] & ML_MASK; // 0x000000FF
         printf("%s, ", operandoDisassembler(registro));
     }
 
-    //Se imprime la segunda parte del codigo en assembler
-    if(tipo_operando2 == TMEMORIA)
+    // Se imprime la segunda parte del codigo en assembler
+    if (tipo_operando2 == TMEMORIA)
     {
-        //printf("entro\n");
+        // printf("entro\n");
         registro = MV->registros[OP2] >> 16;
         uint32_t offset = MV->registros[OP2] & ML_MASK; // 0x000000FF
         printf(" [");
-        printf("%s",operandoDisassembler(registro));
-        if (offset != 0){
+        printf("%s", operandoDisassembler(registro));
+        if (offset != 0)
+        {
             printf(" + %d", offset);
         }
         printf("]\n ");
-    }else if(tipo_operando2 == TREGISTRO){
+    }
+    else if (tipo_operando2 == TREGISTRO)
+    {
         registro = MV->registros[OP2] & ML_MASK; // 0x000000FF
         printf("%s\n", operandoDisassembler(registro));
-    }else if(tipo_operando2 == TINMEDIATO){
-        uint32_t inmediato = (int16_t)get(MV, MV->registros[OP2], 4);
+    }
+    else if (tipo_operando2 == TINMEDIATO)
+    {
+        uint32_t inmediato = get(MV, MV->registros[OP2], 4);
         printf("%d\n", inmediato);
-    }else
+    }
+    else
         printf("\n");
-
 }
 
 void setAC(TVM *VM, int32_t value)
@@ -354,20 +388,23 @@ void setAC(TVM *VM, int32_t value)
     VM->registros[AC] = value;
 }
 
-void setCC(TVM* MV, uint32_t resultado) {                              
-    MV->registros[CC] = 0; 
-    int32_t valor_casteado = (int32_t) resultado;
-    //Se supone que seguimos buenas practicas, pero en nuestro proyecto no seguimos esas normas
-    if (valor_casteado == 0){
+void setCC(TVM *MV, uint32_t resultado)
+{
+    MV->registros[CC] = 0;
+    int32_t valor_casteado = (int32_t)resultado;
+    // Se supone que seguimos buenas practicas, pero en nuestro proyecto no seguimos esas normas
+    if (valor_casteado == 0)
+    {
         MV->registros[CC] = 0x40000000;
     }
-    else {
+    else
+    {
         if (valor_casteado < 0)
         {
             MV->registros[CC] = 0x80000000;
-
         }
-        else{
+        else
+        {
             MV->registros[CC] = 0x0;
         }
     }

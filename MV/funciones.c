@@ -163,31 +163,6 @@ void ADD(TVM *MV)
     set(MV, op1, res);
 }
 
-/*
-void ADD(TVM *MV)
-{
-
-    uint32_t op1 = MV->registros[OP1]; // operando destino
-    uint32_t op2 = MV->registros[OP2]; // operando fuente
-    int32_t res;
-    int32_t val1 = get(MV, op1, 4);
-    int32_t val2 = get(MV, op2, 4); // 32 o 16?? Ojo aca SI Hago MOV EDX 1 y luego le sumo DS lo corto pero si no uso 16 bit no lo interpreta como negativo
-    int16_t valorCasteado = (int16_t)val2;
-
-    if (val2 <= LOW_MASK)
-    { // HardFixeado
-        res = val1 + valorCasteado;
-    }
-    else
-    {
-        res = val1 + val2;
-    }
-    setCC(MV, res);
-    set(MV, op1, res);
-}
-
-*/
-
 void SUB(TVM *MV)
 {
     uint32_t op1 = MV->registros[OP1];
@@ -233,32 +208,11 @@ void CMP(TVM *MV)
     uint32_t op2 = MV->registros[OP2];
     int32_t val1 = (int32_t)get(MV, op1, 4);
     int32_t val2 = (int32_t)get(MV, op2, 4);
-    //printf("val Operando 1 0x%08X\n", val1);
-    //printf("val Operando 2 0x%08X\n", val2);
     res = val1 - val2;
-    //printf("val res %d\n", res);
     setCC(MV, res);
-    //printf("estado CC  0x%08X\n", MV->registros[CC]);
 }
 
-/*
-void CMP(TVM *MV)
-{
-    int32_t res;
-    uint32_t op1 = MV->registros[OP1];
-    uint32_t op2 = MV->registros[OP2];
-    int32_t val1 = (int32_t)get(MV, op1, 4);
-    int32_t val2 = (int32_t)get(MV, op2, 4);
-    printf("val Operando 1 0x%08X\n", val1);
-    printf("val Operando 2 0x%08X\n", val2);
-    val1 = (int16_t)val1;
-    val2 = (int16_t)val2;
-    res = val1 - val2;
-    printf("val res %d\n", res);
-    setCC(MV, res);
-    printf("estado CC  0x%08X\n", MV->registros[CC]);
-}
-*/
+
 
 void SHL(TVM *MV)
 {
@@ -272,7 +226,8 @@ void SHR(TVM *MV)
     // verificar mejor de todas formas este metodo
     int32_t op1 = get(MV, MV->registros[OP1], 4);
     int32_t op2 = get(MV, MV->registros[OP2], 4);
-    uint32_t desplazado = op1 >> op2;
+    uint32_t desplazado = op1;
+    desplazado>>=op2;
     set(MV, MV->registros[OP1], desplazado);
 }
 void SAR(TVM *MV)
@@ -280,8 +235,7 @@ void SAR(TVM *MV)
     // Checkear por las dudas
     int32_t op1 = get(MV, MV->registros[OP1], 4);
     int32_t op2 = get(MV, MV->registros[OP2], 4);
-    int16_t casted = op1 & LOW_MASK; // aca estaba 0xFFFF
-    uint32_t desplazado = casted >> op2;
+    uint32_t desplazado = op1 >> op2;
     set(MV, MV->registros[OP1], desplazado);
 }
 void AND(TVM *MV)

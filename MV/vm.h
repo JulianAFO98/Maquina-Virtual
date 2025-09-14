@@ -54,6 +54,7 @@ uint8_t obtenerSumaBytes(TVM *MV);
 char *operacionDisassembler(uint8_t codOp);
 void interpretaInstruccion(TVM *VM,uint8_t instruccion);
 uint32_t cargarOperando(uint32_t, uint8_t *, uint32_t, uint8_t);
+void cargarAmbosOperandos(TVM *MV,uint32_t direccionFisicaIP);
 int esSalto(uint32_t codOp);
 void disassembler(TVM *MV, uint32_t direccionFisicaIP);
 void mostrarError(uint8_t error);
