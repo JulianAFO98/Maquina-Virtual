@@ -276,7 +276,7 @@ void set(TVM *MV, uint32_t op1, uint32_t op2)
         uint32_t cantBytes = 4; // deberia ser 4 siempre sujeto a cambios por parte 2
         MV->registros[LAR] = dirLogica;
         MV->registros[MAR] = ((0x0004 << 16) & HIGH_MASK) | (dirFisica & LOW_MASK); // Cargo en los 2 byte mas significativos la cantidad de bytes en memoria y en los menos significativos la direccion fisica
-        MV->registros[MBR] = op2 & AH_MASK;     // 0x00FFFFFF                             // Filtro los bytes que pertenecen al tipo de operando
+        MV->registros[MBR] = op2;     // 0x00FFFFFF     // ojo aca le saque la mascara   // Filtro los bytes que pertenecen al tipo de operando
         // se puede extraer y hacer un  prodimiento asigna memoria con LAR MAR Y MRB
         int32_t valor = MV->registros[MBR];
         for (int i = 0; i < cantBytes; i++)

@@ -10,7 +10,8 @@ void (*operaciones[32])(TVM *MV) = {
 
 void SYS(TVM *MV)
 {
-    uint32_t valor = 0;
+    
+    int32_t valor = 0;
     uint32_t dirFisica = obtenerDireccionFisica(MV, MV->registros[EDX]);
     int32_t op1 = get(MV, MV->registros[OP1], 4);            // 0x1 READ 0x2 WRITE
     uint32_t bytesWR = MV->registros[ECX] & HIGH_MASK;      // obtengo los datos del LDH
@@ -38,13 +39,15 @@ void SYS(TVM *MV)
                 scanf("%64s", bin);
                 valor = strtol(bin, NULL, 2);
             }
-            for (int i = 0; i < 4; i++)
+            for (int i = 0; i < 4; i++){
                 MV->memoria[dirFisica + i] = (valor >> (8 * (3 - i))) & ML_MASK;  // 0xFF
+            }
         }
         else if (op1 == 0x2)
         {
-            for (int i = 0; i < 4; i++)
+            for (int i = 0; i < 4; i++){
                 valor = (valor << 8) | MV->memoria[dirFisica + i];
+            }
             if (formato == 0x01)
                 printf("%d", valor);
             else if (formato == 0x02)
@@ -144,16 +147,22 @@ void STOP(TVM *MV)
 }
 void MOV(TVM *MV)
 {
-
     set(MV, MV->registros[OP1], get(MV, MV->registros[OP2], 4));
 }
 void ADD(TVM *MV)
 {
+    
     uint32_t op1 = MV->registros[OP1]; // operando destino
     uint32_t op2 = MV->registros[OP2]; // operando fuente
+    int32_t res;
     int32_t val1 = get(MV, op1, 4);
-    int32_t val2 = get(MV, op2, 4);
-    int32_t res = val1 + val2;
+    int32_t val2 = get(MV, op2, 4); // 32 o 16?? Ojo aca SI Hago MOV EDX 1 y luego le sumo DS lo corto pero si no uso 16 bit no lo interpreta como negativo
+    int16_t valorCasteado = (int16_t) val2;
+    if(val2 <= LOW_MASK){ // HardFixeado
+        res = val1 + valorCasteado;
+    }else{
+        res = val1 + val2;
+    }
     setCC(MV, res);
     set(MV, op1, res);
 }
