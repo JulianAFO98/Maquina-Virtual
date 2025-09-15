@@ -30,9 +30,12 @@ int main(int argc, char *argv[])
                     }else{
                         VM.error = 3;
                     }
-                    disassembler(&VM, direccionFisicaIP);
+                    if(argc > 2 && strcmp(argv[2],"-d")==0){
+                        disassembler(&VM, direccionFisicaIP);
+                    }
                     if (!esSalto(VM.registros[OPC]) && VM.registros[IP] >= 0) 
                         VM.registros[IP] += obtenerSumaBytes(&VM) + 1;
+
                 }
                 if (VM.error && VM.registros[IP] != -1)
                    mostrarError(VM.error);
