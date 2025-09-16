@@ -232,7 +232,7 @@ int32_t get(TVM *MV, uint32_t op, uint8_t cantBytes)
         int error = 0;
         uint32_t segmento = (MV->registros[DS] >> 16) & LOW_MASK; // selector de segmento (ej: DS = 0001) //  27 // 0xFFFF
 
-        uint32_t offset = op & LOW_MASK; // offset lógico 0xFFFF
+        int32_t offset = (int16_t)(op & LOW_MASK);      // offset lógico 0xFFFF
 
         uint32_t regBase = (op >> 16) & ML_MASK; // registro base si hay (ej: 0D = EDX)  // 0xFF
 
@@ -289,7 +289,7 @@ void set(TVM *MV, uint32_t op1, uint32_t op2)
     if (TOperando == TMEMORIA)
     {
         uint32_t segmento = (MV->registros[DS] >> 16) & LOW_MASK; // 0001 siempre // 0xFFFF
-        uint32_t offset = op1 & LOW_MASK;                         // offset de la dirección lógica // 0xFFFF
+        int32_t offset = (int16_t)(op1 & LOW_MASK);                         // offset de la dirección lógica // 0xFFFF
         uint32_t regBase = (op1 >> 16) & ML_MASK;                 // 0D si voy con EDX // 0xFF
         uint32_t dirLogica;
         if (regBase != 0)
