@@ -202,7 +202,7 @@ void cargarAmbosOperandos(TVM *VM, uint32_t direccionFisicaIP)
         uint32_t auxDireccion = direccionFisicaIP; // Variable auxiliar para no operar directamente desde direccionFisicaIP
         if (op2 != 0)
             VM->registros[OP2] = cargarOperando(VM->registros[OP2], VM->memoria, direccionFisicaIP, op2);
-            auxDireccion += op2;
+        auxDireccion += op2;
         if (op1 != 0)
             VM->registros[OP1] = cargarOperando(VM->registros[OP1], VM->memoria, direccionFisicaIP + op2, op1);
     }
@@ -232,7 +232,7 @@ int32_t get(TVM *MV, uint32_t op, uint8_t cantBytes)
         int error = 0;
         uint32_t segmento = (MV->registros[DS] >> 16) & LOW_MASK; // selector de segmento (ej: DS = 0001) //  27 // 0xFFFF
 
-        int32_t offset = (int16_t)(op & LOW_MASK);      // offset lógico 0xFFFF
+        int32_t offset = (int16_t)(op & LOW_MASK); // offset lógico 0xFFFF
 
         uint32_t regBase = (op >> 16) & ML_MASK; // registro base si hay (ej: 0D = EDX)  // 0xFF
 
@@ -289,7 +289,7 @@ void set(TVM *MV, uint32_t op1, uint32_t op2)
     if (TOperando == TMEMORIA)
     {
         uint32_t segmento = (MV->registros[DS] >> 16) & LOW_MASK; // 0001 siempre // 0xFFFF
-        int32_t offset = (int16_t)(op1 & LOW_MASK);                         // offset de la dirección lógica // 0xFFFF
+        int32_t offset = (int16_t)(op1 & LOW_MASK);               // offset de la dirección lógica // 0xFFFF
         uint32_t regBase = (op1 >> 16) & ML_MASK;                 // 0D si voy con EDX // 0xFF
         uint32_t dirLogica;
         if (regBase != 0)
@@ -340,12 +340,15 @@ void disassembler(TVM *MV, uint32_t direccionFisicaIP)
     if (tipo_operando == TMEMORIA)
     {
         registro = MV->registros[OP1] >> 16;
-        uint32_t offset = MV->registros[OP1] & ML_MASK; // 0x000000FF
+        int32_t offset = (int8_t)(MV->registros[OP1] & ML_MASK); // 0x000000FF
         printf("[");
         printf("%s", operandoDisassembler(registro));
         if (offset != 0)
         {
-            printf(" + %d", offset);
+            if (offset >= 0)
+                printf(" + %d", offset);
+            else
+                printf(" %d", offset);
         }
         printf("], ");
     }
@@ -408,4 +411,20 @@ void setCC(TVM *MV, uint32_t resultado)
             MV->registros[CC] = 0x0;
         }
     }
+}
+
+
+void imprimirBinario32(uint32_t valor) {
+    int totalBits = 32;  // Siempre 32 bits para uint32_t
+    printf("0b");        // Prefijo binario opcional
+
+    for (int i = totalBits - 1; i >= 0; i--) {
+        uint32_t mascara = 1u << i;
+        int bit = (valor & mascara) ? 1 : 0;
+        printf("%d", bit);
+        if (i % 4 == 0 && i != 0) {
+            printf(" ");
+        }
+    }
+
 }

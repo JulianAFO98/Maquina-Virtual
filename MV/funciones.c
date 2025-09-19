@@ -1,6 +1,7 @@
 #include "funciones.h"
 #include <stdlib.h>
 #include <stdio.h>
+#include <ctype.h>
 
 void (*operaciones[32])(TVM *MV) = {
     SYS, JMP, JZ, JP, JN, JNZ, JNP, JNN, NOT,
@@ -51,16 +52,21 @@ void SYS(TVM *MV)
                 valor = (valor << 8) | MV->memoria[dirFisica + i];
             }
             if (formato == 0x01)
-                printf("%d", valor);
+                printf("[%04X] %d", dirFisica, valor);
             else if (formato == 0x02)
-                printf("%c", (char)valor);
+            {
+                char c = (char)valor;
+                if (isprint(c))
+                    printf("[%04X] %c", dirFisica, c);
+                else
+                    printf("[%04X] .", dirFisica);
+            }
             else if (formato == 0x04)
-                printf("%o", valor);
+                printf("[%04X] %o", dirFisica, valor);
             else if (formato == 0x08)
-                printf("%X", valor);
+                printf("[%04X] 0x%X", dirFisica, valor);
             else if (formato == 0x10)
-                for (int j = bytesWR * 8 - 1; j >= 0; j--)
-                    printf("%d", (valor >> j) & 1);
+                imprimirBinario32(valor);
             printf("\n");
         }
     }
@@ -212,8 +218,6 @@ void CMP(TVM *MV)
     setCC(MV, res);
 }
 
-
-
 void SHL(TVM *MV)
 {
     int32_t op1 = get(MV, MV->registros[OP1], 4);
@@ -227,7 +231,7 @@ void SHR(TVM *MV)
     int32_t op1 = get(MV, MV->registros[OP1], 4);
     int32_t op2 = get(MV, MV->registros[OP2], 4);
     uint32_t desplazado = op1;
-    desplazado>>=op2;
+    desplazado >>= op2;
     set(MV, MV->registros[OP1], desplazado);
 }
 void SAR(TVM *MV)

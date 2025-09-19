@@ -58,6 +58,9 @@ void cargarAmbosOperandos(TVM *MV,uint32_t direccionFisicaIP);
 int esSalto(uint32_t codOp);
 void disassembler(TVM *MV, uint32_t direccionFisicaIP);
 void mostrarError(uint8_t error);
+void imprimirBinario32(uint32_t valor);
+
+
 
 //Funciones especiales de seteo y obtencion de datos
 int32_t get(TVM *MV, uint32_t op,uint8_t num);
