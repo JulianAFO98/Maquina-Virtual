@@ -66,7 +66,7 @@ void SYS(TVM *MV)
             else if (formato == 0x08)
                 printf("[%04X] 0x%X", dirFisica, valor);
             else if (formato == 0x10)
-                imprimirBinario32(valor);
+                imprimirBinario32(valor,dirFisica);
             printf("\n");
         }
     }

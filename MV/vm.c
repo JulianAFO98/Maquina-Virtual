@@ -414,9 +414,9 @@ void setCC(TVM *MV, uint32_t resultado)
 }
 
 
-void imprimirBinario32(uint32_t valor) {
+void imprimirBinario32(uint32_t valor,uint32_t dirFisica) {
     int totalBits = 32;  // Siempre 32 bits para uint32_t
-    printf("0b");        // Prefijo binario opcional
+    printf("[%04X] 0b",dirFisica);        // Prefijo binario opcional
 
     for (int i = totalBits - 1; i >= 0; i--) {
         uint32_t mascara = 1u << i;
