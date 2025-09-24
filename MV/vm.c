@@ -133,6 +133,20 @@ char *operandoDisassembler(uint8_t op)
 {
     switch (op)
     {
+    case 0x0: 
+        return "LAR";
+    case 0x1:
+        return "MAR";
+    case 0x2:
+        return "MBR";
+    case 0x3:
+        return "IP";
+    case 0x4:
+        return "OPC";
+    case 0x5:
+        return "OP1";
+    case 0x6:
+        return "OP2";
     case 0xA:
         return "EAX";
     case 0xB:
@@ -147,6 +161,10 @@ char *operandoDisassembler(uint8_t op)
         return "EFX";
     case 0x10:
         return "EGX";
+    case 0x1F:
+        return "AC";
+    case 0x2F:
+        return "CC";
     case 0x1B:
         return "DS";
     case 0x1A:

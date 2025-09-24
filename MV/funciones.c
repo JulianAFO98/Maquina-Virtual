@@ -22,8 +22,10 @@ void SYS(TVM *MV)
     {
         if (op1 == 0x1)
         {
-            if (formato == 0x01)
+            if (formato == 0x01){
+                printf("[%04X] ",dirFisica);
                 scanf("%d", &valor);
+            }
             else if (formato == 0x02)
             {
                 char c;
@@ -276,8 +278,8 @@ void LDL(TVM *MV)
     // ver esto puede ser LDL [0],3??
     int32_t op1 = MV->registros[OP1];
     int32_t op2 = MV->registros[OP2];
-    int32_t reg = MV->registros[OP1] & LOW_MASK;                              // aca estaba 0xFFFF
-    MV->registros[reg] = (MV->registros[reg] & HIGH_MASK) | (op2 & LOW_MASK); //  0xFFFF0000  0xFFFF
+    int32_t reg = MV->registros[OP1] & LOW_MASK;
+    MV->registros[reg] = (MV->registros[reg] & HIGH_MASK) | (get(MV,op2,4) & LOW_MASK); //  0xFFFF0000  0xFFFF
 }
 void LDH(TVM *MV)
 {

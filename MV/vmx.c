@@ -25,9 +25,11 @@ int main(int argc, char *argv[])
                     direccionFisicaIP = obtenerDireccionFisica(&VM, VM.registros[IP]); // obtener instruccion a partir de la IP Logica Reg[3] es el reg IP
                     interpretaInstruccion(&VM, VM.memoria[direccionFisicaIP]);
                     cargarAmbosOperandos(&VM,direccionFisicaIP);
+                    //printf("0x%08X\n",VM.registros[OP2]);
                     if(argc > 2 && strcmp(argv[2],"-d")==0){
                         disassembler(&VM, direccionFisicaIP);
                     }
+
                     if(operaciones[VM.registros[OPC]] != NULL){
                         operaciones[VM.registros[OPC]](&VM);
                     }else{
