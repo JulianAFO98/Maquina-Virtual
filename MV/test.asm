@@ -1,15 +1,8 @@
-MOV    [DS], OP1
-MOV    [4], OPC
-MOV    [8], OP2
-MOV    EBX, LAR
-MOV    EEX, MAR
-MOV    EFX, MBR
-MOV    [12], EBX
-MOV    [16], EEX
-MOV    [20], EFX
+
 MOV    EDX, DS
+MOV    [EDX],0x2
 LDH    ECX, 4
-LDL    ECX, 6
-MOV    EAX, 22222
+LDL    ECX, 1
+MOV    EAX, 0x10
 SYS 2
 STOP

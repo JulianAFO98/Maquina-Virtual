@@ -20,12 +20,12 @@ int main(int argc, char *argv[])
             if (esProgramaValido(argv[1])) // Esto ya dentro del archivo mira si lleva VMX25 en los primeros 5 bytes
             {
                 inicializarVM(argv[1], &VM);
-                while (VM.registros[IP] >= 0 && !VM.error)
+                uint32_t finCS = VM.tablaDescriptoresSegmentos[0] & LOW_MASK; // temporal
+                while (VM.registros[IP]<finCS && VM.registros[IP] != -1 && !VM.error)
                 {      
                     direccionFisicaIP = obtenerDireccionFisica(&VM, VM.registros[IP]); // obtener instruccion a partir de la IP Logica Reg[3] es el reg IP
                     interpretaInstruccion(&VM, VM.memoria[direccionFisicaIP]);
                     cargarAmbosOperandos(&VM,direccionFisicaIP);
-                    //printf("0x%08X\n",VM.registros[OP2]);
                     if(argc > 2 && strcmp(argv[2],"-d")==0){
                         disassembler(&VM, direccionFisicaIP);
                     }

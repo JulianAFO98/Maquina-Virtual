@@ -64,13 +64,27 @@ void SYS(TVM *MV)
                     printf("[%04X] .", dirFisica);
             }
             else if (formato == 0x04)
-                printf("[%04X] %o", dirFisica, valor);
+                printf("[%04X] 0o%o", dirFisica, valor);
             else if (formato == 0x08)
                 printf("[%04X] 0x%X", dirFisica, valor);
             else if (formato == 0x10)
                 imprimirBinario32(valor,dirFisica);
+            else if (formato == 0x9){
+                printf("[%04X] 0x%X ", dirFisica, valor);
+                printf("%d", valor);
+            }else if(formato == 0xF){
+                printf("[%04X] 0x%X ", dirFisica, valor);
+                printf("0o%o ", valor);
+                char c = (char)valor;
+                if (isprint(c))
+                    printf("%c ", c);
+                else
+                    printf(". ");
+                 printf("%d", valor);
+            }
             printf("\n");
         }
+        dirFisica+=4;
     }
 }
 void JMP(TVM *MV)

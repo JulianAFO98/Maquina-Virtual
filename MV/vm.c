@@ -431,6 +431,7 @@ void setCC(TVM *MV, uint32_t resultado)
     }
 }
 
+/*
 
 void imprimirBinario32(uint32_t valor,uint32_t dirFisica) {
     int totalBits = 32;  // Siempre 32 bits para uint32_t
@@ -443,6 +444,37 @@ void imprimirBinario32(uint32_t valor,uint32_t dirFisica) {
         if (i % 4 == 0 && i != 0) {
             printf(" ");
         }
+    }
+
+}
+*/
+
+void imprimirBinario32(uint32_t valor, uint32_t dirFisica) {
+    int totalBits = 32;
+    int start = 0;       // bandera: 0 = aun no se encontró 1, 1 = ya se encontró
+    int todosCeros = 1;  // para saber si el número era 0
+
+    printf("[%04X] 0b", dirFisica);
+
+    for (int i = totalBits - 1; i >= 0; i--) {
+        int bit = (valor & (1u << i)) ? 1 : 0;
+
+        if (bit == 1) {
+            start = 1;        // a partir de ahora imprimimos todo
+            todosCeros = 0;   // no era cero
+        }
+
+        if (start) {
+            printf("%d", bit);
+
+            if (i % 4 == 0 && i != 0) {
+                printf(" ");
+            }
+        }
+    }
+
+    if (todosCeros) {
+        printf("0");
     }
 
 }
