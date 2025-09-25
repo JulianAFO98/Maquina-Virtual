@@ -32,12 +32,17 @@ void SYS(TVM *MV)
                 scanf(" %c", &c);
                 valor = (uint32_t)c;
             }
-            else if (formato == 0x04)
+            else if (formato == 0x04){
+                 printf("[%04X] ",dirFisica);
                 scanf("%o", &valor);
-            else if (formato == 0x08)
+            }
+            else if (formato == 0x08){
+                printf("[%04X] ",dirFisica);
                 scanf("%x", &valor);
+            }
             else if (formato == 0x10)
             {
+                printf("[%04X] ",dirFisica);
                 char bin[65];
                 scanf("%64s", bin);
                 valor = strtol(bin, NULL, 2);
@@ -83,8 +88,9 @@ void SYS(TVM *MV)
                  printf("%d", valor);
             }
             printf("\n");
+            dirFisica+=4;
         }
-        dirFisica+=4;
+        
     }
 }
 void JMP(TVM *MV)
