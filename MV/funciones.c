@@ -9,90 +9,93 @@ void (*operaciones[32])(TVM *MV) = {
     STOP, MOV, ADD, SUB, MUL, DIV, CMP, SHL,
     SHR, SAR, AND, OR, XOR, SWAP, LDL, LDH, RND};
 
+
+
+
+
+void leerSYS(TVM *MV, uint32_t dirFisica, uint32_t formato, uint32_t bytesWR)
+{
+    int32_t valor = 0;
+    char c;
+    //printf("Formato:0x%08X\n", formato);
+    //printf("BytesWR:0x%08X\n", bytesWR);
+    //printf("dir fisica:0x%08X\n", dirFisica);
+
+    printf("[%04X] ", dirFisica);
+    if (formato == 0x01)
+        scanf("%d", &valor);
+    else if (formato == 0x02)
+        scanf("%d", &valor);
+    else if (formato == 0x04)
+        scanf("%o", &valor);
+    else if (formato == 0x08)
+        scanf("%x", &valor);
+    else if (formato == 0x10)
+    {
+        char bin[65];
+        scanf("%64s", bin);
+        valor = strtol(bin, NULL, 2);
+    }
+    for (int i = 0; i < bytesWR; i++)
+        MV->memoria[dirFisica + i] = (valor >> (8 * (3 - i))) & ML_MASK; // 0xFF
+}
+
+void escribirSYS(TVM *MV, uint32_t dirFisica, uint32_t formato, uint32_t bytesWR)
+{
+    int32_t valor = 0;
+    // construimos el valor
+    for (int i = 0; i < bytesWR; i++)
+        valor = (valor << 8) | MV->memoria[dirFisica + i];
+    
+    printf("[%04X] ", dirFisica);
+    if (formato & 0b10000){
+        //arreglar esto printf("binario! valor:\n",valor);
+        imprimirBinario32(valor);
+    }
+    if (formato & 0b1000)
+        printf("0x%X ", valor);
+    if (formato & 0b100)
+        printf("0o%o ", valor);
+    if (formato & 0b10)
+    {
+        char c = (char)valor;
+        if (!isprint(c))
+            printf(". ");
+        else{
+            if(formato == 0xF){
+                printf("%c %c ", toupper((unsigned char)c), tolower((unsigned char)c));
+            }else {
+                printf("%c ", c);
+            }
+        }
+    }
+    if (formato & 0b1)
+        printf("%d ", valor);
+    printf("\n");
+}
+
+
 void SYS(TVM *MV)
 {
 
-    int32_t valor = 0;
+   
     uint32_t dirFisica = obtenerDireccionFisica(MV, MV->registros[EDX]);
     int32_t op1 = get(MV, MV->registros[OP1], 4);          // 0x1 READ 0x2 WRITE
-    uint32_t bytesWR = MV->registros[ECX] & HIGH_MASK;     // obtengo los datos del LDH
+    uint32_t bytesWR = (MV->registros[ECX] & HIGH_MASK) >> 16;     // obtengo los datos del LDH
     uint32_t cuantasVeces = MV->registros[ECX] & LOW_MASK; // obtengo los datos del LDL
     uint32_t formato = MV->registros[EAX];                 // formato decimal 0x01 formato 0x02 caracter formato 0x04 octal formato 0x08 hexa formato 0x10 binario
-    for (uint32_t i = 0; i < cuantasVeces; i++)
+   for (uint32_t i = 0; i < cuantasVeces; i++)
     {
         if (op1 == 0x1)
-        {
-            if (formato == 0x01){
-                printf("[%04X] ",dirFisica);
-                scanf("%d", &valor);
-            }
-            else if (formato == 0x02)
-            {
-                char c;
-                scanf(" %c", &c);
-                valor = (uint32_t)c;
-            }
-            else if (formato == 0x04){
-                 printf("[%04X] ",dirFisica);
-                scanf("%o", &valor);
-            }
-            else if (formato == 0x08){
-                printf("[%04X] ",dirFisica);
-                scanf("%x", &valor);
-            }
-            else if (formato == 0x10)
-            {
-                printf("[%04X] ",dirFisica);
-                char bin[65];
-                scanf("%64s", bin);
-                valor = strtol(bin, NULL, 2);
-            }
-            for (int i = 0; i < 4; i++)
-            {
-                MV->memoria[dirFisica + i] = (valor >> (8 * (3 - i))) & ML_MASK; // 0xFF
-            }
-        }
+            leerSYS(MV, dirFisica, formato, bytesWR);
         else if (op1 == 0x2)
         {
-            for (int i = 0; i < 4; i++)
-            {
-                valor = (valor << 8) | MV->memoria[dirFisica + i];
-            }
-            if (formato == 0x01)
-                printf("[%04X] %d", dirFisica, valor);
-            else if (formato == 0x02)
-            {
-                char c = (char)valor;
-                if (isprint(c))
-                    printf("[%04X] %c", dirFisica, c);
-                else
-                    printf("[%04X] .", dirFisica);
-            }
-            else if (formato == 0x04)
-                printf("[%04X] 0o%o", dirFisica, valor);
-            else if (formato == 0x08)
-                printf("[%04X] 0x%X", dirFisica, valor);
-            else if (formato == 0x10)
-                imprimirBinario32(valor,dirFisica);
-            else if (formato == 0x9){
-                printf("[%04X] 0x%X ", dirFisica, valor);
-                printf("%d", valor);
-            }else if(formato == 0xF){
-                printf("[%04X] 0x%X ", dirFisica, valor);
-                printf("0o%o ", valor);
-                char c = (char)valor;
-                if (isprint(c))
-                    printf("%c ", c);
-                else
-                    printf(". ");
-                 printf("%d", valor);
-            }
-            printf("\n");
-            dirFisica+=4;
+            escribirSYS(MV, dirFisica, formato, bytesWR);
         }
-        
+        dirFisica += bytesWR;
     }
 }
+
 void JMP(TVM *MV)
 {
     int32_t op1 = MV->registros[OP1];

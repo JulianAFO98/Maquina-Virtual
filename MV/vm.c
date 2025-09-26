@@ -449,13 +449,10 @@ void imprimirBinario32(uint32_t valor,uint32_t dirFisica) {
 }
 */
 
-void imprimirBinario32(uint32_t valor, uint32_t dirFisica) {
+void imprimirBinario32(uint32_t valor) {
     int totalBits = 32;
     int start = 0;       // bandera: 0 = aun no se encontró 1, 1 = ya se encontró
     int todosCeros = 1;  // para saber si el número era 0
-
-    printf("[%04X] 0b", dirFisica);
-
     for (int i = totalBits - 1; i >= 0; i--) {
         int bit = (valor & (1u << i)) ? 1 : 0;
 

@@ -1,9 +1,0 @@
-
-MOV    EDX, DS
-MOV    [EDX],0x2
-LDH    ECX, 4
-LDL    ECX, 1
-MOV    EAX, 0x8
-SYS 1
-SYS 2
-STOP
