@@ -9,17 +9,13 @@ void (*operaciones[32])(TVM *MV) = {
     STOP, MOV, ADD, SUB, MUL, DIV, CMP, SHL,
     SHR, SAR, AND, OR, XOR, SWAP, LDL, LDH, RND};
 
-
-
-
-
 void leerSYS(TVM *MV, uint32_t dirFisica, uint32_t formato, uint32_t bytesWR)
 {
     int32_t valor = 0;
     char c;
-    //printf("Formato:0x%08X\n", formato);
-    //printf("BytesWR:0x%08X\n", bytesWR);
-    //printf("dir fisica:0x%08X\n", dirFisica);
+    // printf("Formato:0x%08X\n", formato);
+    // printf("BytesWR:0x%08X\n", bytesWR);
+    // printf("dir fisica:0x%08X\n", dirFisica);
 
     printf("[%04X] ", dirFisica);
     if (formato == 0x01)
@@ -40,16 +36,17 @@ void leerSYS(TVM *MV, uint32_t dirFisica, uint32_t formato, uint32_t bytesWR)
         MV->memoria[dirFisica + i] = (valor >> (8 * (3 - i))) & ML_MASK; // 0xFF
 }
 
-void escribirSYS(TVM *MV, uint32_t dirFisica, uint32_t formato, uint32_t bytesWR)
+void escribirSYS(TVM *MV, uint32_t dirFisica, uint32_t formato, uint32_t bytesWR, uint32_t cuantasVeces)
 {
     int32_t valor = 0;
     // construimos el valor
     for (int i = 0; i < bytesWR; i++)
         valor = (valor << 8) | MV->memoria[dirFisica + i];
-    
+
     printf("[%04X] ", dirFisica);
-    if (formato & 0b10000){
-        //arreglar esto printf("binario! valor:\n",valor);
+    if (formato & 0b10000)
+    {
+        // arreglar esto printf("binario! valor:\n",valor);
         imprimirBinario32(valor);
     }
     if (formato & 0b1000)
@@ -61,36 +58,33 @@ void escribirSYS(TVM *MV, uint32_t dirFisica, uint32_t formato, uint32_t bytesWR
         char c = (char)valor;
         if (!isprint(c))
             printf(". ");
-        else{
-            if(formato == 0xF){
-                printf("%c %c ", toupper((unsigned char)c), tolower((unsigned char)c));
-            }else {
-                printf("%c ", c);
-            }
-        }
+        else if (formato == 0xF)
+            printf("%c%c ", toupper((unsigned char)c), tolower((unsigned char)c));
+        else
+            printf("%c ", c);
     }
     if (formato & 0b1)
         printf("%d ", valor);
     printf("\n");
 }
 
-
 void SYS(TVM *MV)
 {
 
-   
     uint32_t dirFisica = obtenerDireccionFisica(MV, MV->registros[EDX]);
-    int32_t op1 = get(MV, MV->registros[OP1], 4);          // 0x1 READ 0x2 WRITE
-    uint32_t bytesWR = (MV->registros[ECX] & HIGH_MASK) >> 16;     // obtengo los datos del LDH
-    uint32_t cuantasVeces = MV->registros[ECX] & LOW_MASK; // obtengo los datos del LDL
-    uint32_t formato = MV->registros[EAX];                 // formato decimal 0x01 formato 0x02 caracter formato 0x04 octal formato 0x08 hexa formato 0x10 binario
-   for (uint32_t i = 0; i < cuantasVeces; i++)
+    int32_t op1 = get(MV, MV->registros[OP1], 4);              // 0x1 READ 0x2 WRITE
+    uint32_t bytesWR = (MV->registros[ECX] & HIGH_MASK) >> 16; // obtengo los datos del LDH
+    uint32_t cuantasVeces = MV->registros[ECX] & LOW_MASK;     // obtengo los datos del LDL
+    uint32_t formato = MV->registros[EAX];                     // formato decimal 0x01 formato 0x02 caracter formato 0x04 octal formato 0x08 hexa formato 0x10 binario
+    for (uint32_t i = 0; i < cuantasVeces; i++)
     {
         if (op1 == 0x1)
             leerSYS(MV, dirFisica, formato, bytesWR);
         else if (op1 == 0x2)
         {
-            escribirSYS(MV, dirFisica, formato, bytesWR);
+            escribirSYS(MV, dirFisica, formato, bytesWR, cuantasVeces);
+        }else if(op1 == 0x7){
+            printf("\033[H\033[2J");
         }
         dirFisica += bytesWR;
     }
@@ -298,18 +292,17 @@ void SWAP(TVM *MV)
 }
 void LDL(TVM *MV)
 {
-    // ver esto puede ser LDL [0],3??
-    int32_t op1 = MV->registros[OP1];
-    int32_t op2 = MV->registros[OP2];
-    int32_t reg = MV->registros[OP1] & LOW_MASK;
-    MV->registros[reg] = (MV->registros[reg] & HIGH_MASK) | (get(MV,op2,4) & LOW_MASK); //  0xFFFF0000  0xFFFF
+    int32_t op1 = get(MV, MV->registros[OP1], 4) & HIGH_MASK;
+    int32_t op2 = get(MV, MV->registros[OP2], 4) & LOW_MASK;
+    op1 = op1 | op2;
+    set(MV, MV->registros[OP1], op1);
 }
 void LDH(TVM *MV)
 {
-    // ver esto puede ser LDL [0],3??
-    int32_t reg = MV->registros[OP1] & LOW_MASK;                          // 0xFFFF
-    int32_t valor = MV->registros[OP2] & LOW_MASK;                        // 0xFFFF
-    MV->registros[reg] = (MV->registros[reg] & LOW_MASK) | (valor << 16); // 0x0000FFFF
+    int32_t op1 = get(MV, MV->registros[OP1], 4) & LOW_MASK;
+    int32_t op2 = ((get(MV, MV->registros[OP2], 4) & LOW_MASK) << 16);
+    op1 = op1 | op2;
+    set(MV, MV->registros[OP1], op1);
 }
 void RND(TVM *MV)
 {

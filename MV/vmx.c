@@ -21,22 +21,23 @@ int main(int argc, char *argv[])
             {
                 inicializarVM(argv[1], &VM);
                 uint32_t finCS = VM.tablaDescriptoresSegmentos[0] & LOW_MASK; // temporal
+                
                 while (VM.registros[IP]<finCS && VM.registros[IP] != -1 && !VM.error)
                 {      
                     direccionFisicaIP = obtenerDireccionFisica(&VM, VM.registros[IP]); // obtener instruccion a partir de la IP Logica Reg[3] es el reg IP
                     interpretaInstruccion(&VM, VM.memoria[direccionFisicaIP]);
                     cargarAmbosOperandos(&VM,direccionFisicaIP);
+                    if (!esSalto(VM.registros[OPC]) && VM.registros[IP] >= 0) 
+                        VM.registros[IP] += obtenerSumaBytes(&VM) + 1;
                     if(argc > 2 && strcmp(argv[2],"-d")==0){
                         disassembler(&VM, direccionFisicaIP);
                     }
-
                     if(operaciones[VM.registros[OPC]] != NULL){
                         operaciones[VM.registros[OPC]](&VM);
                     }else{
                         VM.error = 3;
                     }
-                    if (!esSalto(VM.registros[OPC]) && VM.registros[IP] >= 0) 
-                        VM.registros[IP] += obtenerSumaBytes(&VM) + 1;
+                   
 
                 }
                 if (VM.error && VM.registros[IP] != -1)

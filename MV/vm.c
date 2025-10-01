@@ -333,8 +333,14 @@ void set(TVM *MV, uint32_t op1, uint32_t op2)
     }
 }
 
-void disassembler(TVM *MV, uint32_t direccionFisicaIP)
-{
+void disassembler(TVM *MV, uint32_t direccionFisicaIP,uint32_t finCS)
+{   
+   /*
+    for(int i=0;i<finCS;i++){
+        direccionFisicaIP = obtenerDireccionFisica(MV, MV->registros[IP]);
+    }
+   */
+
     uint32_t tipo_operando = (MV->registros[OP1] & MH_MASK) >> 24;
     uint32_t tipo_operando2 = (MV->registros[OP2] & MH_MASK) >> 24;
     uint32_t reg1 = MV->registros[OP1] & ML_MASK; // 0xFF
@@ -453,6 +459,7 @@ void imprimirBinario32(uint32_t valor) {
     int totalBits = 32;
     int start = 0;       // bandera: 0 = aun no se encontró 1, 1 = ya se encontró
     int todosCeros = 1;  // para saber si el número era 0
+    printf("0b");
     for (int i = totalBits - 1; i >= 0; i--) {
         int bit = (valor & (1u << i)) ? 1 : 0;
 
