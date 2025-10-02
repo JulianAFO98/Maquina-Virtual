@@ -133,7 +133,7 @@ char *operandoDisassembler(uint8_t op)
 {
     switch (op)
     {
-    case 0x0: 
+    case 0x0:
         return "LAR";
     case 0x1:
         return "MAR";
@@ -181,6 +181,18 @@ void interpretaInstruccion(TVM *MV, uint8_t instruccion)
     MV->registros[OP1] = ((instruccion >> 4) & 0x3) << 24; // Ej:0x01000000 -> Con la lectura en main se volveria 0x01000033
     MV->registros[OP2] = ((instruccion >> 6) & 0x3) << 24;
     MV->registros[OPC] = instruccion & 0x1F;
+}
+
+void interpretaInstruccionDisassembler(TVM *MV, uint8_t instruccion, uint32_t *op1, uint32_t *op2, uint32_t *opc)
+{
+    *op1 = 0x0;
+    *op2 = 0x0;
+    // lo acomode para guardarlos en 32bits(sin el valor de los bytes leidos aun)
+    // normalizo y luego shifteo
+    *op1 = ((instruccion >> 4) & 0x3) << 24; // Ej:0x01000000 -> Con la lectura en main se volveria 0x01000033
+    *op2 = ((instruccion >> 6) & 0x3) << 24;
+    *opc = instruccion & 0x1F;
+
 }
 
 uint8_t obtenerSumaBytes(TVM *MV)
@@ -333,82 +345,113 @@ void set(TVM *MV, uint32_t op1, uint32_t op2)
     }
 }
 
-void disassembler(TVM *MV, uint32_t direccionFisicaIP,uint32_t finCS)
-{   
-   /*
-    for(int i=0;i<finCS;i++){
-        direccionFisicaIP = obtenerDireccionFisica(MV, MV->registros[IP]);
-    }
-   */
+void disassembler(TVM *MV, uint32_t finCS)
+{
+    uint32_t direccionFisicaIP;
+    uint32_t op1, op2, opc;
+    uint32_t tipo_operando;
+    uint32_t tipo_operando2;
+    uint32_t reg1, reg2;
+    uint32_t direccionActual = MV->registros[IP];
+    uint32_t sumaBytes=0;
 
-    uint32_t tipo_operando = (MV->registros[OP1] & MH_MASK) >> 24;
-    uint32_t tipo_operando2 = (MV->registros[OP2] & MH_MASK) >> 24;
-    uint32_t reg1 = MV->registros[OP1] & ML_MASK; // 0xFF
-    uint32_t reg2 = MV->registros[OP2] & ML_MASK; // 0xFF
-    // Imprime direccion entre corchetes la instruccion en hexa y luego la instruccion en codigo assembler [xxxx] xx xx xx | MOV
-    printf("[%04X] ", MV->registros[IP]);
-    for (int i = 0; i <= obtenerSumaBytes(MV); i++)
+    while(direccionActual<finCS)
     {
-        printf("%02X ", MV->memoria[direccionFisicaIP + i]);
-    }
+        direccionFisicaIP = obtenerDireccionFisica(MV, direccionActual);
+        
 
-    for (int i = 0; i < (6 - obtenerSumaBytes(MV)) * 3; i++)
-    { // Por ejemplo si la instruccion es de 3 bytes (6-3) * 3 = 9 => rellena con 9 espacios
-        printf(" ");
-    }
-    printf("%-6s ", operacionDisassembler(MV->registros[OPC]));
+        // 🔹 Paso puntero directo, no &MV
+        interpretaInstruccionDisassembler(MV, MV->memoria[direccionFisicaIP], &op1, &op2, &opc);
 
-    // Imprime la segunda parte del codigo en assembler dependiendo si es un operando de memoria, de registro, o inmediato
-    uint32_t registro;
-    uint32_t registro2;
-    if (tipo_operando == TMEMORIA)
-    {
-        registro = MV->registros[OP1] >> 16;
-        int32_t offset = (int8_t)(MV->registros[OP1] & ML_MASK); // 0x000000FF
-        printf("[");
-        printf("%s", operandoDisassembler(registro));
-        if (offset != 0)
+        tipo_operando  = (op1 >> 24) & 0x3;
+        tipo_operando2 = (op2 >> 24) & 0x3;
+        
+
+        // Caso: ambos operandos existen
+        if ((tipo_operando != 0) && (tipo_operando2 != 0))
         {
-            if (offset >= 0)
-                printf(" + %d", offset);
-            else
-                printf(" %d", offset);
-        }
-        printf("], ");
-    }
-    else if (tipo_operando == TREGISTRO)
-    {
-        registro = MV->registros[OP1] & ML_MASK; // 0x000000FF
-        printf("%s, ", operandoDisassembler(registro));
-    }
+            uint32_t valor = 0;
+            for (int j = 0; j < tipo_operando2; j++)
+                valor = (valor << 8) | MV->memoria[direccionFisicaIP + j + 1];
+            op2 = (op2 & MH_MASK) | valor;
 
-    // Se imprime la segunda parte del codigo en assembler
-    if (tipo_operando2 == TMEMORIA)
-    {
-        // printf("entro\n");
-        registro = MV->registros[OP2] >> 16;
-        uint32_t offset = MV->registros[OP2] & ML_MASK; // 0x000000FF
-        printf(" [");
-        printf("%s", operandoDisassembler(registro));
-        if (offset != 0)
-        {
-            printf(" + %d", offset);
+ 
+            valor = 0;
+            for (int j = 0; j < tipo_operando; j++)
+                valor = (valor << 8) | MV->memoria[direccionFisicaIP + tipo_operando2 + j + 1];
+            op1 = (op1 & MH_MASK) | valor;
         }
-        printf("]\n ");
+        else if ((tipo_operando == 0) && (tipo_operando2 != 0))
+        {
+            uint32_t valor = 0;
+            for (int j = 0; j < tipo_operando2; j++)
+                valor = (valor << 8) | MV->memoria[direccionFisicaIP + j + 1];
+
+            op1 = (op2 & MH_MASK) | valor;
+            op2 = 0x0;
+        }
+
+        reg1 = op1 & ML_MASK;
+        reg2 = op2 & ML_MASK;
+        sumaBytes =  tipo_operando + tipo_operando2;
+        // 🔹 Parte visual: imprime direccion, bytes y mnemónico
+        printf("[%04X] ", direccionActual);
+
+        for (int j = 0; j <= sumaBytes; j++)
+            printf("%02X ", MV->memoria[direccionFisicaIP + j]);
+
+        for (int j = 0; j < (6 - sumaBytes) * 3; j++)
+            printf(" ");
+
+        printf("%-6s ", operacionDisassembler(opc));
+
+        // 🔹 Ahora imprimir operandos
+        uint32_t registro;
+
+        // Primer operando
+        if (tipo_operando == TMEMORIA)
+        {
+            registro = op1 >> 16;
+            int32_t offset = (int8_t)(op1 & ML_MASK);
+            printf("[");
+            printf("%s", operandoDisassembler(registro));
+            if (offset != 0)
+                printf("%+d", offset);
+            printf("], ");
+        }
+        else if (tipo_operando == TREGISTRO)
+        {
+            registro = op1 & ML_MASK;
+            printf("%s, ", operandoDisassembler(registro));
+        }
+
+        // Segundo operando
+        if (tipo_operando2 == TMEMORIA)
+        {
+            registro = op2 >> 16;
+            int32_t offset = (int8_t)(op2 & ML_MASK);
+            printf("[");
+            printf("%s", operandoDisassembler(registro));
+            if (offset != 0)
+                printf("%+d", offset);
+            printf("]\n");
+        }
+        else if (tipo_operando2 == TREGISTRO)
+        {
+            registro = op2 & ML_MASK;
+            printf("%s\n", operandoDisassembler(registro));
+        }
+        else if (tipo_operando2 == TINMEDIATO)
+        {
+            uint32_t inmediato = get(MV, op2, 4);
+            printf("%d\n", inmediato);
+        }
+        else
+            printf("\n");
+        direccionActual+=sumaBytes+1;
     }
-    else if (tipo_operando2 == TREGISTRO)
-    {
-        registro = MV->registros[OP2] & ML_MASK; // 0x000000FF
-        printf("%s\n", operandoDisassembler(registro));
-    }
-    else if (tipo_operando2 == TINMEDIATO)
-    {
-        uint32_t inmediato = get(MV, MV->registros[OP2], 4);
-        printf("%d\n", inmediato);
-    }
-    else
-        printf("\n");
 }
+
 
 void setAC(TVM *VM, int32_t value)
 {
@@ -437,48 +480,35 @@ void setCC(TVM *MV, uint32_t resultado)
     }
 }
 
-/*
-
-void imprimirBinario32(uint32_t valor,uint32_t dirFisica) {
-    int totalBits = 32;  // Siempre 32 bits para uint32_t
-    printf("[%04X] 0b",dirFisica);        // Prefijo binario opcional
-
-    for (int i = totalBits - 1; i >= 0; i--) {
-        uint32_t mascara = 1u << i;
-        int bit = (valor & mascara) ? 1 : 0;
-        printf("%d", bit);
-        if (i % 4 == 0 && i != 0) {
-            printf(" ");
-        }
-    }
-
-}
-*/
-
-void imprimirBinario32(uint32_t valor) {
+void imprimirBinario32(uint32_t valor)
+{
     int totalBits = 32;
-    int start = 0;       // bandera: 0 = aun no se encontró 1, 1 = ya se encontró
-    int todosCeros = 1;  // para saber si el número era 0
+    int start = 0;      // bandera: 0 = aun no se encontró 1, 1 = ya se encontró
+    int todosCeros = 1; // para saber si el número era 0
     printf("0b");
-    for (int i = totalBits - 1; i >= 0; i--) {
+    for (int i = totalBits - 1; i >= 0; i--)
+    {
         int bit = (valor & (1u << i)) ? 1 : 0;
 
-        if (bit == 1) {
-            start = 1;        // a partir de ahora imprimimos todo
-            todosCeros = 0;   // no era cero
+        if (bit == 1)
+        {
+            start = 1;      // a partir de ahora imprimimos todo
+            todosCeros = 0; // no era cero
         }
 
-        if (start) {
+        if (start)
+        {
             printf("%d", bit);
 
-            if (i % 4 == 0 && i != 0) {
+            if (i % 4 == 0 && i != 0)
+            {
                 printf(" ");
             }
         }
     }
 
-    if (todosCeros) {
+    if (todosCeros)
+    {
         printf("0");
     }
-
 }
