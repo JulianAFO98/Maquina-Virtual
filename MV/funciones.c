@@ -13,10 +13,6 @@ void leerSYS(TVM *MV, uint32_t dirFisica, uint32_t formato, uint32_t bytesWR)
 {
     int32_t valor = 0;
     char c;
-    // printf("Formato:0x%08X\n", formato);
-    // printf("BytesWR:0x%08X\n", bytesWR);
-    // printf("dir fisica:0x%08X\n", dirFisica);
-
     printf("[%04X] ", dirFisica);
     if (formato == 0x01)
         scanf("%d", &valor);
@@ -39,10 +35,15 @@ void leerSYS(TVM *MV, uint32_t dirFisica, uint32_t formato, uint32_t bytesWR)
 void escribirSYS(TVM *MV, uint32_t dirFisica, uint32_t formato, uint32_t bytesWR, uint32_t cuantasVeces)
 {
     int32_t valor = 0;
+    char buffer[256];
+    int pos = 0;
     // construimos el valor
-    for (int i = 0; i < bytesWR; i++)
-        valor = (valor << 8) | MV->memoria[dirFisica + i];
-
+    for (int i = 0; i < bytesWR; i++){
+        uint8_t byte = MV->memoria[dirFisica + i];
+        valor = (valor << 8) | byte;
+        buffer[pos++] = isprint(byte) ? (char)byte : '.';
+    }
+    buffer[pos] = '\0';
     printf("[%04X] ", dirFisica);
     if (formato & 0b10000)
     {
@@ -54,14 +55,8 @@ void escribirSYS(TVM *MV, uint32_t dirFisica, uint32_t formato, uint32_t bytesWR
     if (formato & 0b100)
         printf("0o%o ", valor);
     if (formato & 0b10)
-    {
-        char c = (char)valor;
-        if (!isprint(c))
-            printf(". ");
-        else if (formato == 0xF)
-            printf("%c%c ", toupper((unsigned char)c), tolower((unsigned char)c));
-        else
-            printf("%c ", c);
+    { 
+        printf("%.*s ", pos, buffer);     
     }
     if (formato & 0b1)
         printf("%d ", valor);

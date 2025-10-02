@@ -1,11 +1,9 @@
-MOV [3], 'd'
-MOV [2], 'o'
-MOV [1], 'o'
-MOV [0], 'G'
+MOV [10], 0x41
+SHL [10], 8
+OR [10], 'a'
 MOV EDX, DS
-ADD EDX, 3
-LDH ECX, 1
-LDL ECX, 4
-MOV EAX, 0x2
+ADD EDX, 12
+LDL ECX, 1
+LDH ECX, 2
+MOV EAX, 0x0F
 SYS 0x2
-
