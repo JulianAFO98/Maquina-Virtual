@@ -42,13 +42,13 @@
 
 typedef struct{
     uint8_t error;
-    uint8_t memoria[MEMORIA];
+    uint8_t *memoria;
     uint32_t tablaDescriptoresSegmentos[CANT_TABLA];
     int32_t registros[CANT_REGISTROS];
 } TVM;
 
 
-void inicializarVM(char * nombreArchivo,TVM*MV);
+void inicializarVM(char * nombreArchivo,TVM*MV, uint32_t tamanioMemoria,char * vectorParametros);
 uint32_t obtenerDireccionFisica(TVM * MV, uint32_t direccionLogica);
 uint8_t obtenerSumaBytes(TVM *MV);
 char *operacionDisassembler(uint8_t codOp);

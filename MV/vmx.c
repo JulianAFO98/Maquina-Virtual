@@ -6,60 +6,121 @@
 #include "vm.h"
 #include "funciones.h"
 
-uint8_t esProgramaValido(char *nombreArchivo);
-uint8_t comprobarExtension(char *nombreArchivo);
+uint8_t esProgramaValido(char *nombreArchivo, char *cabeceraEsperada);
+uint8_t comprobarExtension(char *nombreArchivo, char *extension);
+uint8_t esArgumentoClave(const char *arg, const char *clave);
+
 
 int main(int argc, char *argv[])
 {
     TVM VM;
     uint32_t direccionFisicaIP;
-    if (argc >= 2 && argc < 4)
+    char nombreArchVMX[256];
+    char nombreArchVMI[256];
+    char vectorParametros[60000];
+    uint32_t tamanioMemoria = MEMORIA;
+    int8_t valido = 0;
+    int8_t esVMX1 = (argc > 1) ? comprobarExtension(argv[1], ".vmx") : 0;
+    int8_t esVMI1 = (argc > 1) ? comprobarExtension(argv[1], ".vmi") : 0;
+    int8_t esVMX2 = (argc > 2) ? comprobarExtension(argv[2], ".vmx") : 0;
+    int8_t esVMI2 = (argc > 2) ? comprobarExtension(argv[2], ".vmi") : 0;
+
+    if (argc > 1)
     {
-        if (comprobarExtension(argv[1])) // comprueba primero que sea .vmx, asi no lee un .txt por ejemplo
-        {
-            if (esProgramaValido(argv[1])) // Esto ya dentro del archivo mira si lleva VMX25 en los primeros 5 bytes
+        // el programa puede ejecutarse,comprueba primero que sea .vmx o .vmi, asi no lee un .txt por ejemplo
+        if (esVMX1 || esVMI1)
+        { // existe por lo menos algun archivo valido?
+            if (esVMX1 && esVMI2)
             {
-                inicializarVM(argv[1], &VM);
+                strcpy(nombreArchVMX, argv[1]);
+                strcpy(nombreArchVMI, argv[2]);
+                valido = esProgramaValido(argv[1], "VMX25") && esProgramaValido(argv[2], "VMI25");
+            }
+            else if (esVMI1 && esVMX2)
+            {
+                strcpy(nombreArchVMI, argv[1]);
+                strcpy(nombreArchVMX, argv[2]);
+                valido = esProgramaValido(argv[1], "VMI25") && esProgramaValido(argv[2], "VMX25");
+            }
+            else if (esVMX1)
+            { // Aca caeria el caso de la MV 1
+                strcpy(nombreArchVMX, argv[1]);
+                nombreArchVMI[0] = '\0';
+                valido = esProgramaValido(argv[1], "VMX25");
+            }
+            else if (esVMI1)
+            {
+                strcpy(nombreArchVMI, argv[1]);
+                nombreArchVMX[0] = '\0';
+                valido = esProgramaValido(argv[1], "VMI25");
+            }
+
+            if (valido) // valido si las cabeceras internas de los archivos es valida "VMX25" o "VMI25"
+            {
+                //se recuperan los argumentos del programa
+                for (int i = 0; i < argc; i++)
+                {
+                    //Si tiene memoria en el parametro
+                    if (esArgumentoClave(argv[i],"m"))
+                        tamanioMemoria = atoi(argv[i]+2);
+                    //preguntar por -p
+                    vectorParametros[0]='\0';
+                    //armamos el vector de parametros
+                        
+                    
+                }
+                //tener en cuenta si VMI  
+                if (*nombreArchVMX)
+                {
+                    inicializarVM(nombreArchVMX, &VM,tamanioMemoria,vectorParametros);
+                    //pasar vector de Parametros p
+                }
+                if (*nombreArchVMI)
+                {
+                    // manejar el VMI
+                }
+
                 uint32_t finCS = VM.tablaDescriptoresSegmentos[0] & LOW_MASK; // temporal
-                if(argc > 2 && strcmp(argv[2],"-d")==0){
+                if (argc > 2 && strcmp(argv[2], "-d") == 0)
+                {
                     disassembler(&VM, finCS);
                     VM.error = 0;
                 }
-                while (VM.registros[IP]<finCS && VM.registros[IP] != -1 && !VM.error)
-                {      
+                while (VM.registros[IP] < finCS && VM.registros[IP] != -1 && !VM.error)
+                {
                     direccionFisicaIP = obtenerDireccionFisica(&VM, VM.registros[IP]); // obtener instruccion a partir de la IP Logica Reg[3] es el reg IP
                     interpretaInstruccion(&VM, VM.memoria[direccionFisicaIP]);
-                    cargarAmbosOperandos(&VM,direccionFisicaIP);
-                    if (!esSalto(VM.registros[OPC]) && VM.registros[IP] >= 0) 
+                    cargarAmbosOperandos(&VM, direccionFisicaIP);
+                    if (!esSalto(VM.registros[OPC]) && VM.registros[IP] >= 0)
                         VM.registros[IP] += obtenerSumaBytes(&VM) + 1;
-                   
-                    if(operaciones[VM.registros[OPC]] != NULL){
+
+                    if (operaciones[VM.registros[OPC]] != NULL)
+                    {
                         operaciones[VM.registros[OPC]](&VM);
-                    }else{
+                    }
+                    else
+                    {
                         VM.error = 3;
                     }
-                   
-
                 }
                 if (VM.error && VM.registros[IP] != -1)
-                   mostrarError(VM.error);
-                
+                    mostrarError(VM.error);
+                VM.memoria = NULL;
             }
             else
                 printf("La cabecera del archivo no lleva VMX25 o el archivo no existe");
         }
         else
-            printf("El archivo no tiene extension .vmx o los argumentos se ingresaron de manera incorrecta");
+            printf("El archivo no tiene extension .vmx /.vmi o los argumentos se ingresaron de manera incorrecta");
     }
     else
         printf("Exceso de argumentos, verifique su operacion");
     return 0;
 }
 
-uint8_t esProgramaValido(char *nombreArchivo)
+uint8_t esProgramaValido(char *nombreArchivo, char *cabeceraEsperada)
 {
-    const char cabeceraEsperada[] = "VMX25";
-    char cabecera[TAMANIO_CABECERA];
+    char cabecera[TAMANIO_CABECERA]; // 5
     FILE *VMX = fopen(nombreArchivo, "rb");
     uint8_t valido = 0;
     if (VMX != NULL)
@@ -71,8 +132,14 @@ uint8_t esProgramaValido(char *nombreArchivo)
     return valido;
 }
 
-uint8_t comprobarExtension(char *nombreArchivo)
+uint8_t comprobarExtension(char *nombreArchivo, char *extension)
 {
     uint16_t len = strlen(nombreArchivo);
-    return len < 4 ? 0 : strcmp(nombreArchivo + (len - 4), ".vmx") == 0;
+    return len < 4 ? 0 : strcmp(nombreArchivo + (len - 4), extension) == 0;
+}
+
+
+uint8_t esArgumentoClave(const char *arg, const char *clave) {
+    size_t lenClave = strlen(clave);
+    return (uint8_t)(strncmp(arg, clave, lenClave) == 0 && arg[lenClave] == '=');
 }

@@ -1,13 +1,15 @@
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 #include "vm.h"
 
-void inicializarVM(char *nombreArchivo, TVM *VM)
+void inicializarVM(char *nombreArchivo, TVM *VM, uint32_t tamanioMemoria,char * vectorParametros)
 {
     int c;
+    uint32_t acumuladorMemoria=0;
     uint8_t version;
     uint16_t tamanio_CS, masSignificativos, menosSignificativos, i = 0;
-
+    VM->memoria =(uint8_t*) malloc(tamanioMemoria * sizeof(uint8_t));
     FILE *VMX = fopen(nombreArchivo, "rb"); // no valido ya que se valido antes
 
     // Piso los valores hasta que lee la cabecera
@@ -17,23 +19,34 @@ void inicializarVM(char *nombreArchivo, TVM *VM)
         c = fgetc(VMX);
     }
     version = (uint8_t)fgetc(VMX);
-    masSignificativos = fgetc(VMX);
-    menosSignificativos = fgetc(VMX);
-    tamanio_CS = (masSignificativos << 8) | menosSignificativos;
-    i = 0;
-    while (i < tamanio_CS)
-    {
-        VM->memoria[i] = fgetc(VMX);
-        i++;
+
+    if(version == 1){
+        masSignificativos = fgetc(VMX);
+        menosSignificativos = fgetc(VMX);
+        tamanio_CS = (masSignificativos << 8) | menosSignificativos;
+        i = 0;
+        while (i < tamanio_CS)
+        {
+            VM->memoria[i] = fgetc(VMX);
+            i++;
+        }
+        VM->registros[CS] = 0x0; 
+        VM->registros[DS] = (0x0001 << 16);
+        VM->registros[IP] = POSICION_CS;
+        VM->tablaDescriptoresSegmentos[0] = VM->registros[CS] | (tamanio_CS & LOW_MASK);
+        VM->tablaDescriptoresSegmentos[1] = (VM->tablaDescriptoresSegmentos[0] << 16) | ((MEMORIA - tamanio_CS) & LOW_MASK); // fix 0xFFFF
+    }else if(version == 2){
+        uint32_t contSegmentos=0;
+        if (vectorParametros[0] != '\0'){
+           // VM->tablaDescriptoresSegmentos[contSegmentos++] = 
+        }
+
     }
-    // Inicia registro Claves
-    //  sujeto a cambios ya que si cambia el inicio del CS hay que buscar la forma en que no sea harcodeado
+
+
+
+
     VM->error = 0;
-    VM->registros[CS] = 0x0; // hot fix
-    VM->registros[DS] = (0x0001 << 16);
-    VM->registros[IP] = POSICION_CS;
-    VM->tablaDescriptoresSegmentos[0] = VM->registros[CS] | (tamanio_CS & LOW_MASK);
-    VM->tablaDescriptoresSegmentos[1] = (VM->tablaDescriptoresSegmentos[0] << 16) | ((MEMORIA - tamanio_CS) & LOW_MASK); // fix 0xFFFF
     VM->registros[LAR] = 0;
     VM->registros[MAR] = 0;
     VM->registros[MBR] = 0;
