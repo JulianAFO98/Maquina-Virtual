@@ -1,4 +1,4 @@
-\\EXTRA 0
+\\EXTRA 500
 main: MOV [10], 0x41
 SHL [10], 8
 OR [10], 'a'

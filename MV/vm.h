@@ -19,6 +19,9 @@
 #define TREGISTRO 0x01
 #define TINMEDIATO 0x02
 #define TMEMORIA 0x03
+#define KS 30
+#define ES 28
+#define SS 29
 #define PS 31
 #define CS 26
 #define DS 27
