@@ -19,6 +19,7 @@ int main(int argc, char *argv[])
     char vectorParametros[60000];
     uint32_t tamanioMemoria = MEMORIA;
     int8_t valido = 0;
+    int8_t mostrarDisAssembler = 0;
     int cantParametros = 0;
     int cantCeldas = 0;
     int8_t esVMX1 = (argc > 1) ? comprobarExtension(argv[1], ".vmx") : 0;
@@ -64,7 +65,9 @@ int main(int argc, char *argv[])
                 {
                     if (esArgumentoClave(argv[i], "m"))
                         tamanioMemoria = atoi(argv[i] + 2);
-
+                    if(strcmp(argv[i], "-d") == 0){
+                        mostrarDisAssembler=1;
+                    }
                     // Si encontramos el flag -p
                     if (strcmp(argv[i], "-p") == 0)
                     {
@@ -77,7 +80,7 @@ int main(int argc, char *argv[])
                             {
                                 cantCeldas++;
                                 vectorParametros[k++] = argv[l][j];
-                                printf("%c\n", vectorParametros[k - 1]);
+                                //printf("%c\n", vectorParametros[k - 1]);
                                 if (argv[l][j] == '\0') // copio tambien el terminator
                                     break;
                             }
@@ -97,7 +100,7 @@ int main(int argc, char *argv[])
                 }
 
                 uint32_t finCS = VM.tablaDescriptoresSegmentos[0] & LOW_MASK; // temporal
-                if (argc > 2 && strcmp(argv[2], "-d") == 0)
+                if (mostrarDisAssembler)
                 {
                     disassembler(&VM, finCS);
                     VM.error = 0;
