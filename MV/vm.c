@@ -11,7 +11,7 @@ void inicializarVM(char *nombreArchivo, TVM *VM, uint32_t tamanioMemoria, char *
     int offset = 0;        // posición de inicio de cada string
     int indicePuntero = 0; // índice del puntero que estamos guardando
     int bytesUsados = 0;   // cuenta de bytes recorridos en el bloque de strings
-    uint16_t tamanio_CS,tamanioGenerico, masSignificativos, menosSignificativos, i = 0;
+    uint16_t tamanio_CS, tamanioGenerico, masSignificativos, menosSignificativos, i = 0;
 
     FILE *VMX = fopen(nombreArchivo, "rb"); // no valido ya que se valido antes
     VM->memoria = (uint8_t *)malloc(tamanioMemoria * sizeof(uint8_t));
@@ -40,6 +40,11 @@ void inicializarVM(char *nombreArchivo, TVM *VM, uint32_t tamanioMemoria, char *
         VM->registros[IP] = POSICION_CS;
         VM->tablaDescriptoresSegmentos[0] = VM->registros[CS] | (tamanio_CS & LOW_MASK);
         VM->tablaDescriptoresSegmentos[1] = (VM->tablaDescriptoresSegmentos[0] << 16) | ((MEMORIA - tamanio_CS) & LOW_MASK); // fix 0xFFFF
+        printf("reg CS -> 0x%08X\n", VM->registros[CS]);
+        printf("reg DS -> 0x%08X\n", VM->registros[DS]);
+
+        printf("Segmento CS -> 0x%08X\n", VM->tablaDescriptoresSegmentos[0]);
+        printf("Segmento DS -> 0x%08X\n", VM->tablaDescriptoresSegmentos[1]);
     }
     else if (version == 2)
     {
@@ -49,19 +54,20 @@ void inicializarVM(char *nombreArchivo, TVM *VM, uint32_t tamanioMemoria, char *
         // Esto es solo para el CS hay que hacerlo con el resto de segmentos
         masSignificativos = fgetc(VMX);
         menosSignificativos = fgetc(VMX);
-        tamanio_CS = (masSignificativos << 8) | menosSignificativos;
+        tamanio_CS = ((masSignificativos << 8) | menosSignificativos);
         if (argcParam != 0)
         {
             VM->tablaDescriptoresSegmentos[contSegmentos++] = tamanio_PS;
-            VM->tablaDescriptoresSegmentos[contSegmentos++] = (VM->tablaDescriptoresSegmentos[0] << 16) | (tamanio_CS & LOW_MASK);
+            //VM->tablaDescriptoresSegmentos[contSegmentos++] = (VM->tablaDescriptoresSegmentos[0] << 16) | ((tamanio_CS & LOW_MASK) + tamanio_PS);
+            VM->tablaDescriptoresSegmentos[contSegmentos++] = ((VM->tablaDescriptoresSegmentos[0] << 16) | (tamanio_CS & LOW_MASK)) + tamanio_PS;
             memcpy(VM->memoria, vectorParametros, tamanio_PS);
             // printf("Base PS -> %d\n", (VM->tablaDescriptoresSegmentos[0] & HIGH_MASK) >> 16);
             // printf("Tamanio PS -> %d\n", VM->tablaDescriptoresSegmentos[0] & LOW_MASK);
 
             // printf("Base CS -> %d\n", (VM->tablaDescriptoresSegmentos[1] & HIGH_MASK) >> 16);
             // printf("Tamanio CS -> %d\n", VM->tablaDescriptoresSegmentos[1] & LOW_MASK);
-            //printf("PS -> 0x%08X\n", VM->tablaDescriptoresSegmentos[0]);
-            //printf("CS -> 0x%08X\n", VM->tablaDescriptoresSegmentos[1]);
+            // printf("PS -> 0x%08X\n", VM->tablaDescriptoresSegmentos[0]);
+            // printf("CS -> 0x%08X\n", VM->tablaDescriptoresSegmentos[1]);
             for (int i = 0; i < tamanio_PS; i++)
             {
                 bytesUsados++;
@@ -83,55 +89,64 @@ void inicializarVM(char *nombreArchivo, TVM *VM, uint32_t tamanioMemoria, char *
             VM->registros[CS] = (0x0001 << 16);
             VM->registros[PS] = 0x0;
             printf("Reg PS -> 0x%08X\n", VM->registros[PS]);
-            printf("Reg CS -> 0x%08X\n",  VM->registros[CS]);
-            
+            printf("Reg CS -> 0x%08X\n", VM->registros[CS]);
         }
         else
         {
             VM->tablaDescriptoresSegmentos[contSegmentos++] = (tamanio_CS & LOW_MASK);
             VM->registros[CS] = 0x0;
             VM->registros[PS] = -1;
-            //printf("Base CS -> %d\n", (VM->tablaDescriptoresSegmentos[0] & HIGH_MASK) >> 16);
-            //printf("Tamanio CS -> %d\n", VM->tablaDescriptoresSegmentos[0] & LOW_MASK);
+            // printf("Base CS -> %d\n", (VM->tablaDescriptoresSegmentos[0] & HIGH_MASK) >> 16);
+            // printf("Tamanio CS -> %d\n", VM->tablaDescriptoresSegmentos[0] & LOW_MASK);
             printf("Reg PS -> 0x%08X\n", VM->registros[PS]);
-            printf("Reg CS -> 0x%08X\n",  VM->registros[CS]);
+            printf("Reg CS -> 0x%08X\n", VM->registros[CS]);
         }
-        //arrancamos desde DS
+        // arrancamos desde DS
         uint16_t registroActual = DS;
-        for(int i = 0;i<4;i++){
+        for (int i = 0; i < 4; i++)
+        {
             masSignificativos = fgetc(VMX);
             menosSignificativos = fgetc(VMX);
             tamanioGenerico = (masSignificativos << 8) | menosSignificativos;
-            if(tamanioGenerico != 0){
-                uint32_t base = VM->tablaDescriptoresSegmentos[contSegmentos-1] & LOW_MASK;
+            if (tamanioGenerico != 0)
+            {
+                uint32_t base = VM->tablaDescriptoresSegmentos[contSegmentos - 1] & LOW_MASK;
                 VM->tablaDescriptoresSegmentos[contSegmentos] = (base << 16) | (tamanioGenerico + base);
                 VM->registros[registroActual] = contSegmentos << 16;
                 contSegmentos++;
-            }else {
+            }
+            else
+            {
                 VM->registros[registroActual] = -1;
             }
             registroActual++;
         }
+        fgetc(VMX);
+        fgetc(VMX);
+        int j = 0;
+        while (j < tamanio_CS)
+        {
+            VM->memoria[j] = fgetc(VMX);
+           // printf("%X\n", VM->memoria[j]);
+            j++;
+        }
     }
-
     printf("registros:\n");
     printf("reg PS -> 0x%08X\n", VM->registros[PS]);
     printf("reg CS -> 0x%08X\n", VM->registros[CS]);
     printf("reg DS -> 0x%08X\n", VM->registros[DS]);
-    printf("reg ES -> 0x%08X\n",VM->registros[ES]);
+    printf("reg ES -> 0x%08X\n", VM->registros[ES]);
     printf("reg SS -> 0x%08X\n", VM->registros[SS]);
     printf("reg KS -> 0x%08X\n", VM->registros[KS]);
-    //preguntar
+    // preguntar
     printf("Segmentos:\n");
     printf("Segmento PS -> 0x%08X\n", VM->tablaDescriptoresSegmentos[0]);
     printf("Segmento CS -> 0x%08X\n", VM->tablaDescriptoresSegmentos[1]);
     printf("Segmento DS -> 0x%08X\n", VM->tablaDescriptoresSegmentos[2]);
     printf("Segmento ES -> 0x%08X\n", VM->tablaDescriptoresSegmentos[3]);
     printf("Segmento SS -> 0x%08X\n", VM->tablaDescriptoresSegmentos[4]);
-    masSignificativos = fgetc(VMX);
-    menosSignificativos = fgetc(VMX);
-    uint16_t offsetEntryPoint = (masSignificativos << 8) | menosSignificativos;
-    printf("0x%08X %d\n",offsetEntryPoint,offsetEntryPoint);
+    uint16_t offsetEntryPoint = getEntryPointOffset(nombreArchivo);
+    printf("0x%08X %d\n", offsetEntryPoint, offsetEntryPoint);
     VM->registros[IP] = offsetEntryPoint;
     VM->error = 0;
     VM->registros[LAR] = 0;
@@ -270,6 +285,29 @@ char *operandoDisassembler(uint8_t op)
     case 0x1A:
         return "CS";
     }
+}
+
+uint32_t getEntryPointOffset(char *nombreArchivo)
+{
+    FILE *VMX = fopen(nombreArchivo, "rb"); // no valido ya que se valido antes
+    int i = 0;
+    int numByteMax = 16, masSignificativo, menosSignificativo;
+    char c;
+    while (i < numByteMax && !feof(VMX))
+    {
+        c = fgetc(VMX);
+        if (i == 5 && c == 1)
+        {
+            return 0;
+            fclose(VMX);
+        }
+        i++;
+    }
+    masSignificativo = fgetc(VMX);
+    menosSignificativo = fgetc(VMX);
+    fclose(VMX);
+    int entryPointOffset = (masSignificativo << 16) | menosSignificativo;
+    return entryPointOffset;
 }
 
 void interpretaInstruccion(TVM *MV, uint8_t instruccion)
@@ -458,7 +496,7 @@ void disassembler(TVM *MV, uint32_t finCS)
     {
         direccionFisicaIP = obtenerDireccionFisica(MV, direccionActual);
 
-        // 🔹 Paso puntero directo, no &MV
+        // Paso puntero directo, no &MV
         interpretaInstruccionDisassembler(MV, MV->memoria[direccionFisicaIP], &op1, &op2, &opc);
 
         tipo_operando = (op1 >> 24) & 0x3;
@@ -490,7 +528,7 @@ void disassembler(TVM *MV, uint32_t finCS)
         reg1 = op1 & ML_MASK;
         reg2 = op2 & ML_MASK;
         sumaBytes = tipo_operando + tipo_operando2;
-        // 🔹 Parte visual: imprime direccion, bytes y mnemónico
+        // Parte visual: imprime direccion, bytes y mnemónico
         printf("[%04X] ", direccionActual);
 
         for (int j = 0; j <= sumaBytes; j++)
@@ -501,7 +539,7 @@ void disassembler(TVM *MV, uint32_t finCS)
 
         printf("%-6s ", operacionDisassembler(opc));
 
-        // 🔹 Ahora imprimir operandos
+        // Ahora imprimir operandos
         uint32_t registro;
 
         // Primer operando

@@ -64,7 +64,7 @@ void disassembler(TVM *MV, uint32_t finCS);
 void mostrarError(uint8_t error);
 void imprimirBinario32(uint32_t valor);
 void interpretaInstruccionDisassembler(TVM *MV, uint8_t instruccion,uint32_t *op1, uint32_t *op2,uint32_t * opc);
-
+uint32_t getEntryPointOffset(char *);
 
 
 //Funciones especiales de seteo y obtencion de datos

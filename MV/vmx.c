@@ -98,14 +98,23 @@ int main(int argc, char *argv[])
                 {
                     // manejar el VMI
                 }
-
-                uint32_t finCS = VM.tablaDescriptoresSegmentos[0] & LOW_MASK; // temporal
+                uint32_t finCS;
+                if(cantParametros == 0){
+               //     printf("Entro primero\n");
+                    finCS = VM.tablaDescriptoresSegmentos[0] & LOW_MASK; // temporal
+                }
+                else{
+                 //   printf("Entro segundo\n");
+                    finCS = VM.tablaDescriptoresSegmentos[1] & LOW_MASK;
+                }
+                printf("finCS %X\n", finCS);
+                printf("IP -> %d\n", VM.registros[IP]);
                 if (mostrarDisAssembler)
                 {
                     disassembler(&VM, finCS);
                     VM.error = 0;
                 }
-                while (VM.registros[IP] < finCS && VM.registros[IP] != -1 && !VM.error)
+                while ((VM.registros[IP] < finCS) && (VM.registros[IP] != -1 )&& (!VM.error))
                 {
                     direccionFisicaIP = obtenerDireccionFisica(&VM, VM.registros[IP]); // obtener instruccion a partir de la IP Logica Reg[3] es el reg IP
                     interpretaInstruccion(&VM, VM.memoria[direccionFisicaIP]);
