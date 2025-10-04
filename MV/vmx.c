@@ -10,7 +10,6 @@ uint8_t esProgramaValido(char *nombreArchivo, char *cabeceraEsperada);
 uint8_t comprobarExtension(char *nombreArchivo, char *extension);
 uint8_t esArgumentoClave(const char *arg, const char *clave);
 
-
 int main(int argc, char *argv[])
 {
     TVM VM;
@@ -20,6 +19,8 @@ int main(int argc, char *argv[])
     char vectorParametros[60000];
     uint32_t tamanioMemoria = MEMORIA;
     int8_t valido = 0;
+    int cantParametros = 0;
+    int cantCeldas = 0;
     int8_t esVMX1 = (argc > 1) ? comprobarExtension(argv[1], ".vmx") : 0;
     int8_t esVMI1 = (argc > 1) ? comprobarExtension(argv[1], ".vmi") : 0;
     int8_t esVMX2 = (argc > 2) ? comprobarExtension(argv[2], ".vmx") : 0;
@@ -57,23 +58,38 @@ int main(int argc, char *argv[])
 
             if (valido) // valido si las cabeceras internas de los archivos es valida "VMX25" o "VMI25"
             {
-                //se recuperan los argumentos del programa
+                int k = 0; // indice para vectorParametros
+
                 for (int i = 0; i < argc; i++)
                 {
-                    //Si tiene memoria en el parametro
-                    if (esArgumentoClave(argv[i],"m"))
-                        tamanioMemoria = atoi(argv[i]+2);
-                    //preguntar por -p
-                    vectorParametros[0]='\0';
-                    //armamos el vector de parametros
-                        
-                    
+                    if (esArgumentoClave(argv[i], "m"))
+                        tamanioMemoria = atoi(argv[i] + 2);
+
+                    // Si encontramos el flag -p
+                    if (strcmp(argv[i], "-p") == 0)
+                    {
+                        // procesar los argumentos que vienen despues de -p por ejemplo si p estan en la pos 2 entonces recorre desde pos + 1
+                        for (int l = i + 1; l < argc; l++)
+                        {
+                            cantParametros++;
+                            //Copia caracter a caracter
+                            for (int j = 0;; j++) // ciclo hasta encontrar un break
+                            {
+                                cantCeldas++;
+                                vectorParametros[k++] = argv[l][j];
+                                printf("%c\n", vectorParametros[k - 1]);
+                                if (argv[l][j] == '\0') // copio tambien el terminator
+                                    break;
+                            }
+                        }
+                    }
                 }
-                //tener en cuenta si VMI  
+                printf("Tamanio memoria -> %d\n", tamanioMemoria);
+                // tener en cuenta si VMI
                 if (*nombreArchVMX)
                 {
-                    inicializarVM(nombreArchVMX, &VM,tamanioMemoria,vectorParametros);
-                    //pasar vector de Parametros p
+                    inicializarVM(nombreArchVMX, &VM, tamanioMemoria, vectorParametros, cantParametros, cantCeldas);
+                    // pasar vector de Parametros p
                 }
                 if (*nombreArchVMI)
                 {
@@ -138,8 +154,8 @@ uint8_t comprobarExtension(char *nombreArchivo, char *extension)
     return len < 4 ? 0 : strcmp(nombreArchivo + (len - 4), extension) == 0;
 }
 
-
-uint8_t esArgumentoClave(const char *arg, const char *clave) {
+uint8_t esArgumentoClave(const char *arg, const char *clave)
+{
     size_t lenClave = strlen(clave);
     return (uint8_t)(strncmp(arg, clave, lenClave) == 0 && arg[lenClave] == '=');
 }

@@ -3,7 +3,7 @@
 #include <string.h>
 #include "vm.h"
 
-void inicializarVM(char *nombreArchivo, TVM *VM, uint32_t tamanioMemoria,char * vectorParametros)
+void inicializarVM(char *nombreArchivo, TVM *VM, uint32_t tamanioMemoria,char *vectorParametros, int argcParam, int celdasPS)
 {
     int c;
     uint32_t acumuladorMemoria=0;
@@ -37,10 +37,26 @@ void inicializarVM(char *nombreArchivo, TVM *VM, uint32_t tamanioMemoria,char * 
         VM->tablaDescriptoresSegmentos[1] = (VM->tablaDescriptoresSegmentos[0] << 16) | ((MEMORIA - tamanio_CS) & LOW_MASK); // fix 0xFFFF
     }else if(version == 2){
         uint32_t contSegmentos=0;
-        if (vectorParametros[0] != '\0'){
-           // VM->tablaDescriptoresSegmentos[contSegmentos++] = 
-        }
+        //Lo declaro afuera del condicional porque igualmente si no existiera -p celdasPS = 0 y argcParam = 0
+        int tamanio_PS = celdasPS + (argcParam * 4);
+        //Esto es solo para el CS hay que hacerlo con el resto de segmentos
+        masSignificativos = fgetc(VMX);
+        menosSignificativos = fgetc(VMX);
+        tamanio_CS = (masSignificativos << 8) | menosSignificativos;
+        if (argcParam != 0){
+            VM->tablaDescriptoresSegmentos[contSegmentos++] = tamanio_PS;
+            VM->tablaDescriptoresSegmentos[contSegmentos] = (VM->tablaDescriptoresSegmentos[0] << 16)  | ((tamanioMemoria - tamanio_CS) & LOW_MASK); 
+            printf("Base PS -> %d\n", (VM->tablaDescriptoresSegmentos[0] & HIGH_MASK) >> 16);
+            printf("Tamanio PS -> %d\n", VM->tablaDescriptoresSegmentos[0] & LOW_MASK);
 
+            printf("Base CS -> %d\n", (VM->tablaDescriptoresSegmentos[1] & HIGH_MASK) >> 16);
+            printf("Tamanio CS -> %d\n", VM->tablaDescriptoresSegmentos[1] & LOW_MASK);
+        } else {
+            VM->tablaDescriptoresSegmentos[contSegmentos++] = (tamanio_CS & LOW_MASK); 
+            printf("Base CS -> %d\n", (VM->tablaDescriptoresSegmentos[0] & HIGH_MASK) >> 16);
+            printf("Tamanio CS -> %d\n", VM->tablaDescriptoresSegmentos[0] & LOW_MASK);
+        }
+    
     }
 
 
