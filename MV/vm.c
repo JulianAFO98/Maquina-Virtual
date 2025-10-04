@@ -40,11 +40,6 @@ void inicializarVM(char *nombreArchivo, TVM *VM, uint32_t tamanioMemoria, char *
         VM->registros[IP] = POSICION_CS;
         VM->tablaDescriptoresSegmentos[0] = VM->registros[CS] | (tamanio_CS & LOW_MASK);
         VM->tablaDescriptoresSegmentos[1] = (VM->tablaDescriptoresSegmentos[0] << 16) | ((MEMORIA - tamanio_CS) & LOW_MASK); // fix 0xFFFF
-        printf("reg CS -> 0x%08X\n", VM->registros[CS]);
-        printf("reg DS -> 0x%08X\n", VM->registros[DS]);
-
-        printf("Segmento CS -> 0x%08X\n", VM->tablaDescriptoresSegmentos[0]);
-        printf("Segmento DS -> 0x%08X\n", VM->tablaDescriptoresSegmentos[1]);
     }
     else if (version == 2)
     {
@@ -58,8 +53,7 @@ void inicializarVM(char *nombreArchivo, TVM *VM, uint32_t tamanioMemoria, char *
         if (argcParam != 0)
         {
             VM->tablaDescriptoresSegmentos[contSegmentos++] = tamanio_PS;
-            //VM->tablaDescriptoresSegmentos[contSegmentos++] = (VM->tablaDescriptoresSegmentos[0] << 16) | ((tamanio_CS & LOW_MASK) + tamanio_PS);
-            VM->tablaDescriptoresSegmentos[contSegmentos++] = ((VM->tablaDescriptoresSegmentos[0] << 16) | (tamanio_CS & LOW_MASK)) + tamanio_PS;
+            VM->tablaDescriptoresSegmentos[contSegmentos++] = (VM->tablaDescriptoresSegmentos[0] << 16) | (tamanio_CS & LOW_MASK);
             memcpy(VM->memoria, vectorParametros, tamanio_PS);
             // printf("Base PS -> %d\n", (VM->tablaDescriptoresSegmentos[0] & HIGH_MASK) >> 16);
             // printf("Tamanio PS -> %d\n", VM->tablaDescriptoresSegmentos[0] & LOW_MASK);
@@ -88,18 +82,12 @@ void inicializarVM(char *nombreArchivo, TVM *VM, uint32_t tamanioMemoria, char *
             }
             VM->registros[CS] = (0x0001 << 16);
             VM->registros[PS] = 0x0;
-            printf("Reg PS -> 0x%08X\n", VM->registros[PS]);
-            printf("Reg CS -> 0x%08X\n", VM->registros[CS]);
         }
         else
         {
             VM->tablaDescriptoresSegmentos[contSegmentos++] = (tamanio_CS & LOW_MASK);
             VM->registros[CS] = 0x0;
             VM->registros[PS] = -1;
-            // printf("Base CS -> %d\n", (VM->tablaDescriptoresSegmentos[0] & HIGH_MASK) >> 16);
-            // printf("Tamanio CS -> %d\n", VM->tablaDescriptoresSegmentos[0] & LOW_MASK);
-            printf("Reg PS -> 0x%08X\n", VM->registros[PS]);
-            printf("Reg CS -> 0x%08X\n", VM->registros[CS]);
         }
         // arrancamos desde DS
         uint16_t registroActual = DS;
@@ -127,7 +115,6 @@ void inicializarVM(char *nombreArchivo, TVM *VM, uint32_t tamanioMemoria, char *
         while (j < tamanio_CS)
         {
             VM->memoria[j] = fgetc(VMX);
-           // printf("%X\n", VM->memoria[j]);
             j++;
         }
     }
@@ -162,8 +149,8 @@ uint32_t obtenerDireccionFisica(TVM *MV, uint32_t direccionLogica)
     uint32_t offSet = direccionLogica & LOW_MASK;                                         // 0x0000FFFF
     uint32_t direccionFisica = direccionBase + offSet;
     uint32_t limiteSegmento = MV->tablaDescriptoresSegmentos[segmento] & LOW_MASK; // 0xFFFF
-    if (direccionFisica < direccionBase || direccionFisica + 3 > limiteSegmento)
-        MV->error = 1;
+    //if (direccionFisica < direccionBase || direccionFisica + 3 > limiteSegmento)
+      //  MV->error = 1;
     return direccionFisica;
 }
 
@@ -298,8 +285,8 @@ uint32_t getEntryPointOffset(char *nombreArchivo)
         c = fgetc(VMX);
         if (i == 5 && c == 1)
         {
-            return 0;
             fclose(VMX);
+            return 0;
         }
         i++;
     }

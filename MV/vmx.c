@@ -104,11 +104,11 @@ int main(int argc, char *argv[])
                     finCS = VM.tablaDescriptoresSegmentos[0] & LOW_MASK; // temporal
                 }
                 else{
-                 //   printf("Entro segundo\n");
+                    //printf("Entro segundo\n");
                     finCS = VM.tablaDescriptoresSegmentos[1] & LOW_MASK;
                 }
-                printf("finCS %X\n", finCS);
-                printf("IP -> %d\n", VM.registros[IP]);
+                //printf("finCS %X\n", finCS);
+                //printf("IP -> %d\n", VM.registros[IP]);
                 if (mostrarDisAssembler)
                 {
                     disassembler(&VM, finCS);

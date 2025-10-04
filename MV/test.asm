@@ -1,3 +1,4 @@
+TEXTO EQU "Hola"
 \\EXTRA 500
 main: MOV [10], 0x41
 SHL [10], 8
