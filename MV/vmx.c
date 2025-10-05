@@ -65,8 +65,9 @@ int main(int argc, char *argv[])
                 {
                     if (esArgumentoClave(argv[i], "m"))
                         tamanioMemoria = atoi(argv[i] + 2);
-                    if(strcmp(argv[i], "-d") == 0){
-                        mostrarDisAssembler=1;
+                    if (strcmp(argv[i], "-d") == 0)
+                    {
+                        mostrarDisAssembler = 1;
                     }
                     // Si encontramos el flag -p
                     if (strcmp(argv[i], "-p") == 0)
@@ -75,12 +76,12 @@ int main(int argc, char *argv[])
                         for (int l = i + 1; l < argc; l++)
                         {
                             cantParametros++;
-                            //Copia caracter a caracter
+                            // Copia caracter a caracter
                             for (int j = 0;; j++) // ciclo hasta encontrar un break
                             {
                                 cantCeldas++;
                                 vectorParametros[k++] = argv[l][j];
-                                //printf("%c\n", vectorParametros[k - 1]);
+                                // printf("%c\n", vectorParametros[k - 1]);
                                 if (argv[l][j] == '\0') // copio tambien el terminator
                                     break;
                             }
@@ -98,23 +99,29 @@ int main(int argc, char *argv[])
                 {
                     // manejar el VMI
                 }
-                uint32_t finCS;
-                if(cantParametros == 0){
-               //     printf("Entro primero\n");
-                    finCS = VM.tablaDescriptoresSegmentos[0] & LOW_MASK; // temporal
+                //uint32_t finCS = ((VM.tablaDescriptoresSegmentos[(VM.registros[CS] >> 16)] & LOW_MASK) + ((VM.tablaDescriptoresSegmentos[(VM.registros[CS] >> 16)] & HIGH_MASK)>>16));
+                int16_t inicioCS = (VM.tablaDescriptoresSegmentos[(VM.registros[CS] >> 16)] & HIGH_MASK) >> 16;
+                uint32_t parteAltaCS = (VM.tablaDescriptoresSegmentos[(VM.registros[CS] >> 16)] & HIGH_MASK)>>16;
+                uint32_t parteBajaCS = (VM.tablaDescriptoresSegmentos[(VM.registros[CS] >> 16)] & LOW_MASK);
+                uint32_t finCS = parteBajaCS+parteAltaCS - 1;
+                printf("inicioCS %d\n", inicioCS);
+
+                printf("finCS %d\n", finCS);
+                //printf("IP -> %d\n", VM.registros[IP]);
+                
+                /*
+                for (int i = 0; i < 70; i++)
+                {
+                    printf("Memoria %d 0x%02X\n", i, VM.memoria[i]);
                 }
-                else{
-                 //   printf("Entro segundo\n");
-                    finCS = VM.tablaDescriptoresSegmentos[1] & LOW_MASK;
-                }
-                printf("finCS %X\n", finCS);
-                printf("IP -> %d\n", VM.registros[IP]);
+                */
                 if (mostrarDisAssembler)
                 {
                     disassembler(&VM, finCS);
                     VM.error = 0;
                 }
-                while ((VM.registros[IP] < finCS) && (VM.registros[IP] != -1 )&& (!VM.error))
+
+                while ((VM.registros[IP] <= finCS) && (VM.registros[IP] != -1) && (!VM.error))
                 {
                     direccionFisicaIP = obtenerDireccionFisica(&VM, VM.registros[IP]); // obtener instruccion a partir de la IP Logica Reg[3] es el reg IP
                     interpretaInstruccion(&VM, VM.memoria[direccionFisicaIP]);
