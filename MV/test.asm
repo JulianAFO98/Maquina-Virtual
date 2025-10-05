@@ -1,5 +1,6 @@
-TEXTO EQU "Hola"
 \\EXTRA 500
+\\DATA 0
+TEXTO EQU "Hola"
 main: MOV [10], 0x41
 SHL [10], 8
 OR [10], 'a'
