@@ -63,6 +63,19 @@ void escribirSYS(TVM *MV, uint32_t dirFisica, uint32_t formato, uint32_t bytesWR
     printf("\n");
 }
 
+
+void stringWrite(TVM *MV, uint32_t dirFisica){
+    char palabra [256];
+    int i = 0;
+    printf("[%04X] ",dirFisica);
+    while(MV->memoria[dirFisica + i] != 0 &&  i < sizeof(palabra) - 1){
+        palabra[i]=MV->memoria[dirFisica + i];
+        i++;
+    }
+    palabra[i]= '\0';
+    printf("%s",palabra);
+}
+
 void SYS(TVM *MV)
 {
 
@@ -71,17 +84,22 @@ void SYS(TVM *MV)
     uint32_t bytesWR = (MV->registros[ECX] & HIGH_MASK) >> 16; // obtengo los datos del LDH
     uint32_t cuantasVeces = MV->registros[ECX] & LOW_MASK;     // obtengo los datos del LDL
     uint32_t formato = MV->registros[EAX];                     // formato decimal 0x01 formato 0x02 caracter formato 0x04 octal formato 0x08 hexa formato 0x10 binario
-    for (uint32_t i = 0; i < cuantasVeces; i++)
-    {
-        if (op1 == 0x1)
-            leerSYS(MV, dirFisica, formato, bytesWR);
-        else if (op1 == 0x2)
+    
+    if(op1 == 0x4){
+        stringWrite(MV, dirFisica);
+    }else {
+        for (uint32_t i = 0; i < cuantasVeces; i++)
         {
-            escribirSYS(MV, dirFisica, formato, bytesWR, cuantasVeces);
-        }else if(op1 == 0x7){
-            printf("\033[H\033[2J");
+            if (op1 == 0x1)
+                leerSYS(MV, dirFisica, formato, bytesWR);
+            else if (op1 == 0x2)
+            {
+                escribirSYS(MV, dirFisica, formato, bytesWR, cuantasVeces);
+            }else if(op1 == 0x7){
+                printf("\033[H\033[2J");
+            }
+            dirFisica += bytesWR;
         }
-        dirFisica += bytesWR;
     }
 }
 

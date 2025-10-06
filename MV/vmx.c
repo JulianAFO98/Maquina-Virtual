@@ -100,6 +100,9 @@ int main(int argc, char *argv[])
                     // manejar el VMI
                 }
                 uint32_t finCS =(VM.tablaDescriptoresSegmentos[(VM.registros[CS] >> 16)] & LOW_MASK) - 1;
+                for(int i=0;i<70;i++){
+                    printf("Memoria %d: 0x%02X\n",i,VM.memoria[i]);
+                }
                 printf("finCS %d\n", finCS);
                 //printf("IP -> %d\n", VM.registros[IP]);
                 if (mostrarDisAssembler)

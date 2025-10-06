@@ -319,15 +319,21 @@ char *operandoDisassembler(uint8_t op)
     case 0xF:
         return "EFX";
     case 0x10:
-        return "EGX";
-    case 0x1F:
         return "AC";
-    case 0x2F:
+    case 0x11:
         return "CC";
     case 0x1B:
         return "DS";
     case 0x1A:
         return "CS";
+    case 0x1C:
+        return "ES";
+    case 0x1D:
+        return "SS";
+    case 0x1E:
+        return "KS";
+    case 0x1F:
+        return "PS";
     }
 }
 
@@ -621,7 +627,9 @@ void disassembler(TVM *MV, uint32_t finCS)
         }
         else if (tipo_operando2 == TINMEDIATO)
         {
-            uint32_t inmediato = get(MV, op2, 4);
+            //ojo con esto, hardFIX para que se muestre bien el sys
+            uint32_t opGenerico = op2 ? op2 : op1;
+            uint32_t inmediato = get(MV, opGenerico, 4);
             printf("%d\n", inmediato);
         }
         else

@@ -5,6 +5,7 @@
 #include <time.h>
 void leerSYS(TVM *MV, uint32_t dirFisica, uint32_t formato, uint32_t bytesWR);
 void escribirSYS(TVM *MV, uint32_t dirFisica, uint32_t formato, uint32_t bytesWR, uint32_t cuantasVeces);
+void stringWrite(TVM *MV, uint32_t dirFisica);
 void SYS(TVM *MV);
 void JMP(TVM *MV);
 void JZ(TVM *MV);
