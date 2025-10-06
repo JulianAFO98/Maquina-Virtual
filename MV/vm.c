@@ -98,7 +98,7 @@ void inicializarVM(char *nombreArchivo, TVM *VM, uint32_t tamanioMemoria, char *
             {
                 VM->tablaDescriptoresSegmentos[contSegmentos++] = ((VM->tablaDescriptoresSegmentos[0] << 16) | ((tamanio_KS+ tamanio_PS)& (LOW_MASK)));
                 VM->registros[KS] = (contSegmentos - 1) << 16;
-                VM->tablaDescriptoresSegmentos[contSegmentos++] = ((VM->tablaDescriptoresSegmentos[contSegmentos - 2] << 16) | ((tamanio_CS+tamanio_KS) & (LOW_MASK)));
+                VM->tablaDescriptoresSegmentos[contSegmentos++] = ((VM->tablaDescriptoresSegmentos[contSegmentos - 2] << 16) | ((tamanio_CS+tamanio_KS+tamanio_PS) & (LOW_MASK)));
             }else{
                 VM->tablaDescriptoresSegmentos[contSegmentos++] = ((VM->tablaDescriptoresSegmentos[0] << 16) | ((tamanio_CS + tamanio_PS) & (LOW_MASK)));
             }
@@ -141,7 +141,7 @@ void inicializarVM(char *nombreArchivo, TVM *VM, uint32_t tamanioMemoria, char *
             {
                 VM->tablaDescriptoresSegmentos[contSegmentos++] =  (tamanio_KS & LOW_MASK);
                 VM->registros[KS] = 0x0;
-                VM->tablaDescriptoresSegmentos[contSegmentos++] = ((VM->tablaDescriptoresSegmentos[0] << 16) | (tamanio_CS & LOW_MASK));
+                VM->tablaDescriptoresSegmentos[contSegmentos++] = ((VM->tablaDescriptoresSegmentos[contSegmentos - 2] << 16) | ((tamanio_CS+tamanio_KS) & LOW_MASK));
             }else{
                 VM->tablaDescriptoresSegmentos[contSegmentos++] = (tamanio_CS & LOW_MASK);                
             }

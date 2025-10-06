@@ -1,5 +1,9 @@
 \\DATA 200
-TEXT EQU "hola"
+\\STACK 3666
+\\EXTRA 0
+TXT2 EQU "hola"
+TXT4 EQU "hola"
+
 main: MOV [10], 0x41
 SHL [10], 8
 OR [10], 'a'

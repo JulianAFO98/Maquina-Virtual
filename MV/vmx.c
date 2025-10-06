@@ -99,21 +99,9 @@ int main(int argc, char *argv[])
                 {
                     // manejar el VMI
                 }
-                int16_t inicioCS = (VM.tablaDescriptoresSegmentos[(VM.registros[CS] >> 16)] & HIGH_MASK) >> 16;
-                uint32_t parteAltaCS = (VM.tablaDescriptoresSegmentos[(VM.registros[CS] >> 16)] & HIGH_MASK)>>16;
-                uint32_t parteBajaCS = (VM.tablaDescriptoresSegmentos[(VM.registros[CS] >> 16)] & LOW_MASK);
-                uint32_t finCS = parteBajaCS+parteAltaCS;
-                printf("inicioCS %d\n", inicioCS);
-
+                uint32_t finCS =(VM.tablaDescriptoresSegmentos[(VM.registros[CS] >> 16)] & LOW_MASK) - 1;
                 printf("finCS %d\n", finCS);
                 //printf("IP -> %d\n", VM.registros[IP]);
-                
-                
-                for (int i = 0; i < 70; i++)
-                {
-                    printf("Memoria %d 0x%02X\n", i, VM.memoria[i]);
-                }
-                
                 if (mostrarDisAssembler)
                 {
                     disassembler(&VM, finCS);
