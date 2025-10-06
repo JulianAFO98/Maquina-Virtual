@@ -99,28 +99,26 @@ int main(int argc, char *argv[])
                 {
                     // manejar el VMI
                 }
-                //uint32_t finCS = ((VM.tablaDescriptoresSegmentos[(VM.registros[CS] >> 16)] & LOW_MASK) + ((VM.tablaDescriptoresSegmentos[(VM.registros[CS] >> 16)] & HIGH_MASK)>>16));
                 int16_t inicioCS = (VM.tablaDescriptoresSegmentos[(VM.registros[CS] >> 16)] & HIGH_MASK) >> 16;
                 uint32_t parteAltaCS = (VM.tablaDescriptoresSegmentos[(VM.registros[CS] >> 16)] & HIGH_MASK)>>16;
                 uint32_t parteBajaCS = (VM.tablaDescriptoresSegmentos[(VM.registros[CS] >> 16)] & LOW_MASK);
-                uint32_t finCS = parteBajaCS+parteAltaCS - 1;
+                uint32_t finCS = parteBajaCS+parteAltaCS;
                 printf("inicioCS %d\n", inicioCS);
 
                 printf("finCS %d\n", finCS);
                 //printf("IP -> %d\n", VM.registros[IP]);
                 
-                /*
+                
                 for (int i = 0; i < 70; i++)
                 {
                     printf("Memoria %d 0x%02X\n", i, VM.memoria[i]);
                 }
-                */
+                
                 if (mostrarDisAssembler)
                 {
                     disassembler(&VM, finCS);
                     VM.error = 0;
                 }
-
                 while ((VM.registros[IP] <= finCS) && (VM.registros[IP] != -1) && (!VM.error))
                 {
                     direccionFisicaIP = obtenerDireccionFisica(&VM, VM.registros[IP]); // obtener instruccion a partir de la IP Logica Reg[3] es el reg IP
