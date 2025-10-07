@@ -78,7 +78,7 @@ void stringWrite(TVM *MV, uint32_t dirFisica){
 
 void SYS(TVM *MV)
 {
-
+  
     uint32_t dirFisica = obtenerDireccionFisica(MV, MV->registros[EDX]);
     int32_t op1 = get(MV, MV->registros[OP1], 4);              // 0x1 READ 0x2 WRITE
     uint32_t bytesWR = (MV->registros[ECX] & HIGH_MASK) >> 16; // obtengo los datos del LDH
@@ -134,6 +134,7 @@ void JN(TVM *MV)
 {
     if (MV->registros[CC] == 0x80000000)
     {
+
         MV->registros[IP] = get(MV, MV->registros[OP1], 4);
     }
     else

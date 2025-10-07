@@ -99,33 +99,24 @@ int main(int argc, char *argv[])
                 {
                     // manejar el VMI
                 }
-                uint32_t finCS =(VM.tablaDescriptoresSegmentos[(VM.registros[CS] >> 16)] & LOW_MASK) - 1;
-                for(int i=0;i<70;i++){
-                    printf("Memoria %d: 0x%02X\n",i,VM.memoria[i]);
-                }
-                printf("finCS %d\n", finCS);
-                //printf("IP -> %d\n", VM.registros[IP]);
+                uint32_t finCS = (VM.tablaDescriptoresSegmentos[(VM.registros[CS] >> 16)] & LOW_MASK);
                 if (mostrarDisAssembler)
                 {
-                    disassembler(&VM, finCS);
+                    disassembler(&VM);
                     VM.error = 0;
                 }
-                while ((VM.registros[IP] <= finCS) && (VM.registros[IP] != -1) && (!VM.error))
+                while ((VM.registros[IP] != -1) && ((VM.registros[IP] & LOW_MASK) < finCS) && (!VM.error))
                 {
-                    direccionFisicaIP = obtenerDireccionFisica(&VM, VM.registros[IP]); // obtener instruccion a partir de la IP Logica Reg[3] es el reg IP
+                    direccionFisicaIP = obtenerDireccionFisica(&VM, VM.registros[IP]);
                     interpretaInstruccion(&VM, VM.memoria[direccionFisicaIP]);
                     cargarAmbosOperandos(&VM, direccionFisicaIP);
                     if (!esSalto(VM.registros[OPC]) && VM.registros[IP] >= 0)
                         VM.registros[IP] += obtenerSumaBytes(&VM) + 1;
-
+                    
                     if (operaciones[VM.registros[OPC]] != NULL)
-                    {
                         operaciones[VM.registros[OPC]](&VM);
-                    }
                     else
-                    {
                         VM.error = 3;
-                    }
                 }
                 if (VM.error && VM.registros[IP] != -1)
                     mostrarError(VM.error);

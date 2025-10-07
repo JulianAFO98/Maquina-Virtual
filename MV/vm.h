@@ -60,7 +60,7 @@ void interpretaInstruccion(TVM *VM,uint8_t instruccion);
 uint32_t cargarOperando(uint32_t, uint8_t *, uint32_t, uint8_t);
 void cargarAmbosOperandos(TVM *MV,uint32_t direccionFisicaIP);
 int esSalto(uint32_t codOp);
-void disassembler(TVM *MV, uint32_t finCS);
+void disassembler(TVM *MV);
 void mostrarError(uint8_t error);
 void imprimirBinario32(uint32_t valor);
 void interpretaInstruccionDisassembler(TVM *MV, uint8_t instruccion,uint32_t *op1, uint32_t *op2,uint32_t * opc);
