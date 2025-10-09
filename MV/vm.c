@@ -191,7 +191,12 @@ void inicializarVM(char *nombreArchivo, TVM *VM, uint32_t tamanioMemoria, char *
         uint32_t ipLogica = VM->registros[CS]  | offsetEntryPoint;
         VM->registros[IP] = ipLogica;
     }
-    
+    //Normaliza registros
+    for(int q=0xA;q<0x10;q++){
+        VM->registros[q] = 0;
+       // printf("E%XX = %d\n",q, VM->registros[q]);
+    }
+
     VM->error = 0;
     VM->registros[LAR] = 0;
     VM->registros[MAR] = 0;
@@ -315,16 +320,52 @@ char *operandoDisassembler(uint8_t op)
         return "OP2";
     case 0xA:
         return "EAX";
+    case 0x4A:
+        return "AL";
+    case 0x8A:
+        return "AH";
+    case 0xCA:
+        return "AX";
     case 0xB:
         return "EBX";
+    case 0x4B:
+        return "BL";
+    case 0x8B:
+        return "BH";
+    case 0xCB:
+        return "BX";
     case 0xC:
         return "ECX";
+    case 0x4C:
+        return "CL";
+    case 0x8C:
+        return "CH";
+    case 0xCC:
+        return "CX";
     case 0xD:
         return "EDX";
+    case 0x4D:
+        return "DL";
+    case 0x8D:
+        return "DH";
+    case 0xCD:
+        return "DX";
     case 0xE:
         return "EEX";
+    case 0x4E:
+        return "EL";
+    case 0x8E:
+        return "EH";
+    case 0xEA:
+        return "EX";
     case 0xF:
         return "EFX";
+    case 0x4F:
+        return "FL";
+    case 0x8F:
+        return "FH";
+    case 0xCF:
+        return "FX";
     case 0x10:
         return "AC";
     case 0x11:
@@ -445,27 +486,38 @@ void cargarAmbosOperandos(TVM *VM, uint32_t direccionFisicaIP)
     }
 }
 
+
 int32_t get(TVM *MV, uint32_t op, uint8_t cantBytes)
 {
-
     uint32_t TOperando = (op & MH_MASK) >> 24; // tipo de operando // 0xFF000000
     uint32_t valor = 0;
 
     if (TOperando == TMEMORIA)
     {
         int error = 0;
-        uint32_t segmento = (MV->registros[DS] >> 16) & LOW_MASK; // selector de segmento (ej: DS = 0001) //  27 // 0xFFFF
-
+        uint32_t segmento = MV->registros[DS] & HIGH_MASK; // selector de segmento (ej: DS = 0001) //  27 // 0xFFFF
         int32_t offset = (int16_t)(op & LOW_MASK); // offset lógico 0xFFFF
-
         uint32_t regBase = (op >> 16) & ML_MASK; // registro base si hay (ej: 0D = EDX)  // 0xFF
-
         uint32_t dirLogica;
-        if (regBase != 0)
-            dirLogica = MV->registros[regBase] + offset;
-        else
-            dirLogica = (segmento << 16) | offset;
+        if(regBase != 0){
+            uint8_t sectorReg = (regBase & 0xF0) >> 4;
+            if(sectorReg == 4){
+                regBase = regBase & 0x0000000F;
+                dirLogica = segmento | (MV->registros[regBase] + offset);
 
+            }else if(sectorReg == 8){
+                regBase = regBase & 0x0000000F;
+                dirLogica = segmento  | ((MV->registros[regBase] >> 8) + offset);
+            }else if(sectorReg == 12){
+                regBase = regBase & 0x0000000F;
+                dirLogica = segmento| (MV->registros[regBase] + offset);
+            }else{
+               dirLogica = segmento| (MV->registros[regBase] + offset);
+            }
+        }else{
+            dirLogica = segmento| offset;
+        }
+        
         uint32_t dirFisica = obtenerDireccionFisica(MV, dirLogica);
         for (int i = 0; i < cantBytes; i++)
         {
@@ -478,8 +530,42 @@ int32_t get(TVM *MV, uint32_t op, uint8_t cantBytes)
     }
     else if (TOperando == TREGISTRO)
     {
-        uint32_t reg = op & ML_MASK; // 0xFF
-        valor = MV->registros[reg];
+        /*A partir del registro que quiero obtener de memoria deberia verifiar si el byte mas significativo
+          pertenece a un sector especifico de dicho registro entonces le mando esa cantidad de bits que se
+          quiere obtener.
+          Por ejemplo si OP1 = 0100008A -> esto pertenece al 3er byte de EAX es decir -> EAX = 12345678 entonces AH = 56
+          y si por ejemplo quiero hacer MOV AH, 6 => AH = 11 y EAX queda conformado como -> EAX = 12340B78
+        */
+        uint32_t reg = (op & ML_MASK); // 0xFF
+        //printf("Operando -> 0X%08X\n", op);
+        //printf("Registro -> %X\n", reg & 0x0000000F);
+        uint32_t sectorReg = (op & 0x0000000F0) >> 4;
+        //printf("Sector registros %X\n", sectorReg);
+        //printf("Valor antes -> %X %d\n", MV->registros[reg], MV->registros[reg]);
+        //Cuando entra en alguno de estos IF es mejor redefinir el registro ya que unicamente entra en las condiciones si son
+        //registros de proposito general
+        if (sectorReg == 4)
+        { 
+            reg = reg & 0x0000000F;
+            valor = MV->registros[reg] & ML_MASK;
+        }
+        else if (sectorReg == 8)
+        { 
+            reg = reg & 0x0000000F;
+            printf("Registro E%XX\n", reg);
+            valor = (MV->registros[reg] & 0xFF00) >> 8;
+            printf("Valor ->0x%08X\n", valor);
+
+        }
+        else if (sectorReg == 12)
+        { 
+            reg = reg & 0x0000000F;
+            valor = MV->registros[reg] & LOW_MASK;
+        }
+        else
+        {
+            valor = MV->registros[reg];
+        }
     }
     else if (TOperando == TINMEDIATO)
     {
@@ -512,20 +598,36 @@ void set(TVM *MV, uint32_t op1, uint32_t op2)
     uint32_t TOperando = (op1 & MH_MASK) >> 24; // podriamos usar el Operando ya guardado en la MV // 0xFF000000
     if (TOperando == TMEMORIA)
     {
-        uint32_t segmento = (MV->registros[DS] >> 16) & LOW_MASK; // 0001 siempre // 0xFFFF
+        uint32_t segmento = (MV->registros[DS] & HIGH_MASK); // 0001 siempre // 0xFFFF
         int32_t offset = (int16_t)(op1 & LOW_MASK);               // offset de la dirección lógica // 0xFFFF
         uint32_t regBase = (op1 >> 16) & ML_MASK;                 // 0D si voy con EDX // 0xFF
         uint32_t dirLogica;
-        if (regBase != 0)
-            dirLogica = (segmento << 16) | (MV->registros[regBase] + offset);
+        if (regBase != 0){
+            uint8_t sectorReg = (regBase & 0xF0) >> 4;
+            if(sectorReg == 4){
+                regBase = regBase & 0x0000000F;
+                dirLogica = segmento | (MV->registros[regBase] + offset);
+            }else if(sectorReg == 8){
+                regBase = regBase & 0x0000000F;
+                dirLogica = segmento  | ((MV->registros[regBase] >> 8)+ offset);
+            }else if(sectorReg == 12){
+                regBase = regBase & 0x0000000F;
+                dirLogica = segmento| (MV->registros[regBase] + offset);
+            }else{
+               dirLogica = segmento| (MV->registros[regBase] + offset);
+            }
+        }
         else
             dirLogica = (segmento << 16) | offset;
+        printf("Dir. Logica -> 0x%08X\n", dirLogica);
         uint32_t dirFisica = obtenerDireccionFisica(MV, dirLogica);
+        printf("Dir. fisica -> 0x%08X\n", dirFisica);
         uint32_t cantBytes = 4; // deberia ser 4 siempre sujeto a cambios por parte 2
         MV->registros[LAR] = dirLogica;
         MV->registros[MAR] = ((0x0004 << 16) & HIGH_MASK) | (dirFisica & LOW_MASK); // Cargo en los 2 byte mas significativos la cantidad de bytes en memoria y en los menos significativos la direccion fisica
         MV->registros[MBR] = op2;                                                   // 0x00FFFFFF     // ojo aca le saque la mascara   // Filtro los bytes que pertenecen al tipo de operando
         // se puede extraer y hacer un  prodimiento asigna memoria con LAR MAR Y MRB
+
         uint32_t valor = (uint32_t)op2;
         for (int i = 0; i < cantBytes; i++)
         {
@@ -535,9 +637,29 @@ void set(TVM *MV, uint32_t op1, uint32_t op2)
     else if (TOperando == TREGISTRO)
     {
         uint32_t reg = op1 & AH_MASK; // 0x00FFFFFF
-        MV->registros[reg] = op2;
+        uint8_t sectorReg = (reg & 0xF0) >> 4;
+        if (sectorReg == 4)
+        { 
+            reg = reg & 0x0000000F;
+            MV->registros[reg] = (MV->registros[reg] & 0xFFFFFF00) | op2 ;
+        }
+        else if (sectorReg == 8)
+        { 
+            reg = reg & 0x0000000F;
+            MV->registros[reg] = (MV->registros[reg] & 0xFFFF00FF) | (op2 << 8);
+        }
+        else if (sectorReg == 12)
+        { 
+            reg = reg & 0x0000000F;
+            MV->registros[reg] = (MV->registros[reg] & 0xFFFF0000) | (op2);
+        }
+        else
+        {
+            MV->registros[reg] = op2;
+       }
     }
 }
+
 
 void disassembler(TVM *MV)
 {
@@ -614,6 +736,7 @@ void disassembler(TVM *MV)
         else if (tipo_operando == TREGISTRO)
         {
             registro = op1 & ML_MASK;
+          //  printf("registro %X\n", registro);
             printf("%s, ", operandoDisassembler(registro));
         }
 

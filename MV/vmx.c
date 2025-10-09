@@ -89,6 +89,7 @@ int main(int argc, char *argv[])
                     }
                 }
                 printf("Tamanio memoria -> %d\n", tamanioMemoria);
+
                 // tener en cuenta si VMI
                 if (*nombreArchVMX)
                 {
@@ -120,6 +121,9 @@ int main(int argc, char *argv[])
                 }
                 if (VM.error && VM.registros[IP] != -1)
                     mostrarError(VM.error);
+                for(int k=0; k < 100; k++){
+                        printf("Memoria %d %X\n",k, VM.memoria[k]);
+                }
                 VM.memoria = NULL;
             }
             else
