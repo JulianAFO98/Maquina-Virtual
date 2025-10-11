@@ -192,7 +192,9 @@ void inicializarVM(char *nombreArchivo, TVM *VM, uint32_t tamanioMemoria, char *
         uint32_t ipLogica = VM->registros[CS]  | offsetEntryPoint;
         VM->registros[IP] = ipLogica;
         uint32_t offSetSS =  VM->tablaDescriptoresSegmentos[(VM->registros[SS]>>16)] & LOW_MASK;
-        VM->registros[SP] = obtenerDireccionFisica(VM,VM->registros[SS]) + offSetSS; // me caigo del segmento SS
+        VM->registros[SP] =  VM->registros[SS] + offSetSS; // me caigo del segmento SS
+        //printf("SP -> 0x%08X\n", VM->registros[SP]);
+        //printf("Direccion fisica del SP -> 0x%08X\n", obtenerDireccionFisica(VM, VM->registros[SP]));
     }
     //Normaliza registros
     for(int q=0xA;q<0x10;q++){
@@ -532,8 +534,10 @@ int32_t get(TVM *MV, uint32_t op, uint8_t cantBytes)
         }else{
             dirLogica = segmento| offset;
         }
-        
+        printf("dir logica en GET 0x%08X\n",dirLogica);
         uint32_t dirFisica = obtenerDireccionFisica(MV, dirLogica);
+        printf("BP -> 0x%08X\n", MV->registros[BP]);
+        printf("dir fisica  en GET 0x%08X\n",dirFisica);
         for (int i = 0; i < cantBytes; i++)
         {
             valor = (valor << 8) | MV->memoria[dirFisica + i];

@@ -190,6 +190,11 @@ void STOP(TVM *MV)
 }
 void MOV(TVM *MV)
 {
+    printf("\n------MOV-------\n");
+    printf("Operando 1 -> 0x%08X\n", MV->registros[OP1]);
+    printf("Operando 2 -> 0x%08X\n", MV->registros[OP2]);
+    printf("Get Operando 2 0x%08X\n", get(MV, MV->registros[OP2], 4));
+    printf("--------------\n");
     set(MV, MV->registros[OP1], get(MV, MV->registros[OP2], 4));
 }
 void ADD(TVM *MV)
@@ -336,8 +341,9 @@ void RND(TVM *MV)
 
 void PUSH(TVM *MV)
 {
+    //printf("SP antes de PUSH -> 0x%08X\n", MV->registros[SP]);
     int32_t op1 = get(MV, MV->registros[OP1], 4);
-    printf("PUSH 0x%08X\n",op1);
+    printf("\nPUSH 0x%08X\n",op1);
     MV->registros[SP] -= 4;
     uint32_t dirFisica = obtenerDireccionFisica(MV, MV->registros[SP]);
     for (int i = 0; i < 4; i++)
