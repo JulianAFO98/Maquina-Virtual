@@ -121,7 +121,7 @@ int main(int argc, char *argv[])
                 }
                 if (VM.error && VM.registros[IP] != -1)
                     mostrarError(VM.error);
-                for(int k=0; k < 100; k++){
+                for(int k=0; k < 70; k++){
                         printf("Memoria %d %X\n",k, VM.memoria[k]);
                 }
                 VM.memoria = NULL;

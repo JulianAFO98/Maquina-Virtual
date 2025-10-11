@@ -106,13 +106,15 @@ void SYS(TVM *MV)
 void JMP(TVM *MV)
 {
     int32_t op1 = MV->registros[OP1];
-    MV->registros[IP] = get(MV, op1, 4);
+    printf("Operando 1 -> 0x%08X\n", op1);
+    printf("Get Operando 1 0x%08X\n", get(MV, op1, 4));
+    MV->registros[IP] = MV->registros[CS] | get(MV, op1, 4);
 }
 void JZ(TVM *MV)
 {
     if (MV->registros[CC] & 0x40000000)
     {
-        MV->registros[IP] = get(MV, MV->registros[OP1], 4);
+        MV->registros[IP] = MV->registros[CS] | get(MV, MV->registros[OP1], 4);
     }
     else
     {
@@ -123,7 +125,7 @@ void JP(TVM *MV)
 {
     if (MV->registros[CC] == 0)
     {
-        MV->registros[IP] = get(MV, MV->registros[OP1], 4);
+        MV->registros[IP] = MV->registros[CS] | get(MV, MV->registros[OP1], 4);
     }
     else
     {
@@ -135,7 +137,7 @@ void JN(TVM *MV)
     if (MV->registros[CC] == 0x80000000)
     {
 
-        MV->registros[IP] = get(MV, MV->registros[OP1], 4);
+        MV->registros[IP] = MV->registros[CS] | get(MV, MV->registros[OP1], 4);
     }
     else
     {
@@ -146,7 +148,7 @@ void JNZ(TVM *MV)
 {
     if (MV->registros[CC] != 0x40000000)
     {
-        MV->registros[IP] = get(MV, MV->registros[OP1], 4);
+        MV->registros[IP] = MV->registros[CS] | get(MV, MV->registros[OP1], 4);
     }
     else
     {
@@ -157,7 +159,7 @@ void JNP(TVM *MV)
 {
     if (MV->registros[CC] != 0)
     {
-        MV->registros[IP] = get(MV, MV->registros[OP1], 4);
+        MV->registros[IP] = MV->registros[CS] | get(MV, MV->registros[OP1], 4);
     }
     else
     {
@@ -168,7 +170,7 @@ void JNN(TVM *MV)
 {
     if (MV->registros[CC] != 0x80000000)
     {
-        MV->registros[IP] = get(MV, MV->registros[OP1], 4);
+        MV->registros[IP] = MV->registros[CS] | get(MV, MV->registros[OP1], 4);
     }
     else
     {
@@ -255,7 +257,10 @@ void SHL(TVM *MV)
 {
     int32_t op1 = get(MV, MV->registros[OP1], 4);
     int32_t op2 = get(MV, MV->registros[OP2], 4);
+    printf("op1 %X\n", op1);
+    printf("op2 %X\n", op2);
     uint32_t desplazado = op1 << op2;
+    printf("desplazado 0x%08X\n", desplazado);
     set(MV, MV->registros[OP1], desplazado);
 }
 void SHR(TVM *MV)
@@ -278,9 +283,13 @@ void SAR(TVM *MV)
 void AND(TVM *MV)
 {
     int32_t op1 = get(MV, MV->registros[OP1], 4);
+    printf("Operando 1 -> 0x%08X\n", op1);
     int32_t op2 = get(MV, MV->registros[OP2], 4);
+    printf("Operando 2 -> 0x%08X\n", op2);
     uint32_t res = op1 & op2;
+    printf("Resultado -> 0x%08X\n", res);
     set(MV, MV->registros[OP1], res);
+    printf("OP1 0x%08X\n",MV->registros[OP1]);
 }
 void OR(TVM *MV)
 {

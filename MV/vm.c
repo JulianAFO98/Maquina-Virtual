@@ -503,14 +503,14 @@ int32_t get(TVM *MV, uint32_t op, uint8_t cantBytes)
             uint8_t sectorReg = (regBase & 0xF0) >> 4;
             if(sectorReg == 4){
                 regBase = regBase & 0x0000000F;
-                dirLogica = segmento | (MV->registros[regBase] + offset);
+                dirLogica = segmento | ((MV->registros[regBase] & 0xFF) + offset);
 
             }else if(sectorReg == 8){
                 regBase = regBase & 0x0000000F;
                 dirLogica = segmento  | ((MV->registros[regBase] >> 8) + offset);
             }else if(sectorReg == 12){
                 regBase = regBase & 0x0000000F;
-                dirLogica = segmento| (MV->registros[regBase] + offset);
+                dirLogica = segmento| ((MV->registros[regBase] & 0xFFFF) + offset);
             }else{
                dirLogica = segmento| (MV->registros[regBase] + offset);
             }
@@ -547,20 +547,22 @@ int32_t get(TVM *MV, uint32_t op, uint8_t cantBytes)
         if (sectorReg == 4)
         { 
             reg = reg & 0x0000000F;
-            valor = MV->registros[reg] & ML_MASK;
+            printf("Registro -> %X\n", reg);
+            printf("Antes %d\n", MV->registros[reg]);
+            valor = (uint8_t)(MV->registros[reg] & ML_MASK);
+            printf("Despues %d\n", valor);
         }
         else if (sectorReg == 8)
         { 
             reg = reg & 0x0000000F;
-            printf("Registro E%XX\n", reg);
-            valor = (MV->registros[reg] & 0xFF00) >> 8;
-            printf("Valor ->0x%08X\n", valor);
-
+            printf("Resultado en GET antes 0x%08X\n", MV->registros[reg]);
+            valor = (uint8_t)((MV->registros[reg] & 0xFF00) >> 8);
+            printf("Resultado en GET dps 0x%08X\n", MV->registros[reg]);
         }
         else if (sectorReg == 12)
         { 
             reg = reg & 0x0000000F;
-            valor = MV->registros[reg] & LOW_MASK;
+            valor = (uint16_t)(MV->registros[reg] & LOW_MASK);
         }
         else
         {
@@ -606,13 +608,13 @@ void set(TVM *MV, uint32_t op1, uint32_t op2)
             uint8_t sectorReg = (regBase & 0xF0) >> 4;
             if(sectorReg == 4){
                 regBase = regBase & 0x0000000F;
-                dirLogica = segmento | (MV->registros[regBase] + offset);
+                dirLogica = segmento | ((MV->registros[regBase] & 0xFF)+ offset);
             }else if(sectorReg == 8){
                 regBase = regBase & 0x0000000F;
-                dirLogica = segmento  | ((MV->registros[regBase] >> 8)+ offset);
+                dirLogica = segmento  | (((MV->registros[regBase] >> 8) & 0xFF)+ offset);
             }else if(sectorReg == 12){
                 regBase = regBase & 0x0000000F;
-                dirLogica = segmento| (MV->registros[regBase] + offset);
+                dirLogica = segmento| ((MV->registros[regBase] & 0xFFFF) + offset);
             }else{
                dirLogica = segmento| (MV->registros[regBase] + offset);
             }
@@ -641,17 +643,21 @@ void set(TVM *MV, uint32_t op1, uint32_t op2)
         if (sectorReg == 4)
         { 
             reg = reg & 0x0000000F;
-            MV->registros[reg] = (MV->registros[reg] & 0xFFFFFF00) | op2 ;
+             printf("Resultado en SET antes 0x%08X\n", MV->registros[reg]);
+            MV->registros[reg] = (MV->registros[reg] & 0xFFFFFF00) | (op2 & 0xFF) ;
+            printf("Resultado en SET 0x%08X\n", MV->registros[reg]);
         }
         else if (sectorReg == 8)
         { 
             reg = reg & 0x0000000F;
-            MV->registros[reg] = (MV->registros[reg] & 0xFFFF00FF) | (op2 << 8);
+            printf("Resultado en SET antes 0x%08X\n", MV->registros[reg]);
+            MV->registros[reg] = (MV->registros[reg] & 0xFFFF00FF) | ((op2 << 8) & 0xFF00);
+            printf("Resultado en SET 0x%08X\n", MV->registros[reg]);
         }
         else if (sectorReg == 12)
         { 
             reg = reg & 0x0000000F;
-            MV->registros[reg] = (MV->registros[reg] & 0xFFFF0000) | (op2);
+            MV->registros[reg] = (MV->registros[reg] & 0xFFFF0000) | ((op2) & 0xFFFF);
         }
         else
         {
