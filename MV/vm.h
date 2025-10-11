@@ -34,6 +34,8 @@
 #define OPC 4
 #define OP1 5
 #define OP2 6
+#define SP 7
+#define BP 8
 #define EAX 10
 #define EBX 11
 #define ECX 12

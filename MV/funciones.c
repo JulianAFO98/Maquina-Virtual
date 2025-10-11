@@ -5,7 +5,7 @@
 
 void (*operaciones[32])(TVM *MV) = {
     SYS, JMP, JZ, JP, JN, JNZ, JNP, JNN, NOT,
-    NULL, NULL, NULL, NULL, NULL, NULL,
+    NULL, NULL, PUSH, POP, CALL, RET,
     STOP, MOV, ADD, SUB, MUL, DIV, CMP, SHL,
     SHR, SAR, AND, OR, XOR, SWAP, LDL, LDH, RND};
 
@@ -106,8 +106,8 @@ void SYS(TVM *MV)
 void JMP(TVM *MV)
 {
     int32_t op1 = MV->registros[OP1];
-    printf("Operando 1 -> 0x%08X\n", op1);
-    printf("Get Operando 1 0x%08X\n", get(MV, op1, 4));
+    //printf("Operando 1 -> 0x%08X\n", op1);
+    //printf("Get Operando 1 0x%08X\n", get(MV, op1, 4));
     MV->registros[IP] = MV->registros[CS] | get(MV, op1, 4);
 }
 void JZ(TVM *MV)
@@ -283,13 +283,13 @@ void SAR(TVM *MV)
 void AND(TVM *MV)
 {
     int32_t op1 = get(MV, MV->registros[OP1], 4);
-    printf("Operando 1 -> 0x%08X\n", op1);
+    //printf("Operando 1 -> 0x%08X\n", op1);
     int32_t op2 = get(MV, MV->registros[OP2], 4);
-    printf("Operando 2 -> 0x%08X\n", op2);
+    //printf("Operando 2 -> 0x%08X\n", op2);
     uint32_t res = op1 & op2;
-    printf("Resultado -> 0x%08X\n", res);
+    //printf("Resultado -> 0x%08X\n", res);
     set(MV, MV->registros[OP1], res);
-    printf("OP1 0x%08X\n",MV->registros[OP1]);
+    //printf("OP1 0x%08X\n",MV->registros[OP1]);
 }
 void OR(TVM *MV)
 {
@@ -332,4 +332,55 @@ void RND(TVM *MV)
     srand(time(NULL));
     int random = rand() % get(MV, MV->registros[OP2], 4);
     set(MV, MV->registros[OP1], random);
+}
+
+void PUSH(TVM *MV)
+{
+    int32_t op1 = get(MV, MV->registros[OP1], 4);
+    printf("PUSH 0x%08X\n",op1);
+    MV->registros[SP] -= 4;
+    uint32_t dirFisica = obtenerDireccionFisica(MV, MV->registros[SP]);
+    for (int i = 0; i < 4; i++)
+    {
+        MV->memoria[dirFisica + i] = (op1 >> (8 * (3 - i))) & ML_MASK; // 0xFF
+    }
+    
+}
+
+void POP(TVM *MV)
+{
+    uint32_t dirFisica = obtenerDireccionFisica(MV, MV->registros[SP]);
+    int32_t valor = 0;
+    for (int i = 0; i < 4; i++)
+    {
+        valor = (valor << 8) | MV->memoria[dirFisica + i];
+    }
+    set(MV, MV->registros[OP1], valor);
+    MV->registros[SP] += 4;
+}
+
+void CALL(TVM *MV)
+{
+    int32_t op1 = get(MV, MV->registros[OP1], 4);
+    MV->registros[SP] -= 4;
+    uint32_t dirFisica = obtenerDireccionFisica(MV, MV->registros[SP]);
+    uint32_t retorno = MV->registros[IP];
+    for (int i = 0; i < 4; i++)
+    {
+        MV->memoria[dirFisica + i] = (retorno >> (8 * (3 - i))) & ML_MASK; // 0xFF
+    }
+    
+    MV->registros[IP] = MV->registros[CS] | op1;
+}
+
+void RET(TVM *MV)
+{
+    uint32_t dirFisica = obtenerDireccionFisica(MV, MV->registros[SP]);
+    int32_t valor = 0;
+    for (int i = 0; i < 4; i++)
+    {
+        valor = (valor << 8) | MV->memoria[dirFisica + i];
+    }
+    MV->registros[IP] = valor;
+    MV->registros[SP] += 4;
 }

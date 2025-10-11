@@ -32,6 +32,10 @@ void SWAP(TVM *MV);
 void LDL(TVM *MV);
 void LDH(TVM *MV);
 void RND(TVM *MV);
+void RET(TVM *MV);
+void CALL(TVM *MV);
+void POP(TVM *MV);
+void PUSH(TVM *MV);
 
 extern void (*operaciones[32])(TVM *MV); // array de punteros a funciones
 

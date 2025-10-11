@@ -183,13 +183,16 @@ void inicializarVM(char *nombreArchivo, TVM *VM, uint32_t tamanioMemoria, char *
         // preguntar
         //printf("Segmentos:\n");
         printf("Segmento PS -> 0x%08X\n", VM->tablaDescriptoresSegmentos[0]);
-        printf("Segmento CS -> 0x%08X\n", VM->tablaDescriptoresSegmentos[1]);
-        printf("Segmento DS -> 0x%08X\n", VM->tablaDescriptoresSegmentos[2]);
-        printf("Segmento ES -> 0x%08X\n", VM->tablaDescriptoresSegmentos[3]);
-        printf("Segmento SS -> 0x%08X\n", VM->tablaDescriptoresSegmentos[4]);
+        printf("Segmento KS -> 0x%08X\n", VM->tablaDescriptoresSegmentos[1]);
+        printf("Segmento CS -> 0x%08X\n", VM->tablaDescriptoresSegmentos[2]);
+        printf("Segmento DS -> 0x%08X\n", VM->tablaDescriptoresSegmentos[3]);
+        printf("Segmento ES -> 0x%08X\n", VM->tablaDescriptoresSegmentos[4]);
+        printf("Segmento SS -> 0x%08X\n", VM->tablaDescriptoresSegmentos[5]);
         uint16_t offsetEntryPoint = getEntryPointOffset(nombreArchivo);
         uint32_t ipLogica = VM->registros[CS]  | offsetEntryPoint;
         VM->registros[IP] = ipLogica;
+        uint32_t offSetSS =  VM->tablaDescriptoresSegmentos[(VM->registros[SS]>>16)] & LOW_MASK;
+        VM->registros[SP] = obtenerDireccionFisica(VM,VM->registros[SS]) + offSetSS; // me caigo del segmento SS
     }
     //Normaliza registros
     for(int q=0xA;q<0x10;q++){
@@ -218,8 +221,8 @@ uint32_t obtenerDireccionFisica(TVM *MV, uint32_t direccionLogica)
     //printf("c1 0x%08X\n",direccionFisica < direccionBase);
     //printf("c2 0x%08X\n",direccionFisica + 3 > limiteSegmento);
     
-    if (direccionFisica < direccionBase || direccionFisica + 3 > limiteSegmento)
-        MV->error = 1;
+    //if (direccionFisica < direccionBase || direccionFisica + 3 > limiteSegmento)
+      //  MV->error = 1;
     return direccionFisica;
 }
 
@@ -295,6 +298,14 @@ char *operacionDisassembler(uint8_t codOp)
         return "LDH";
     case 0x1F:
         return "RND";
+    case 0x0B:
+        return "PUSH";
+    case 0x0C:
+        return "POP";
+    case 0x0D:
+        return "CALL";
+    case 0x0E:
+        return "RET";
     default:
         return "???";
     }
@@ -382,6 +393,10 @@ char *operandoDisassembler(uint8_t op)
         return "KS";
     case 0x1F:
         return "PS";
+    case 0x7:
+        return "SP";
+    case 0x8:
+        return "BP";
     }
 }
 
@@ -547,17 +562,17 @@ int32_t get(TVM *MV, uint32_t op, uint8_t cantBytes)
         if (sectorReg == 4)
         { 
             reg = reg & 0x0000000F;
-            printf("Registro -> %X\n", reg);
-            printf("Antes %d\n", MV->registros[reg]);
+            //printf("Registro -> %X\n", reg);
+            //printf("Antes %d\n", MV->registros[reg]);
             valor = (uint8_t)(MV->registros[reg] & ML_MASK);
-            printf("Despues %d\n", valor);
+            //printf("Despues %d\n", valor);
         }
         else if (sectorReg == 8)
         { 
             reg = reg & 0x0000000F;
-            printf("Resultado en GET antes 0x%08X\n", MV->registros[reg]);
+            //printf("Resultado en GET antes 0x%08X\n", MV->registros[reg]);
             valor = (uint8_t)((MV->registros[reg] & 0xFF00) >> 8);
-            printf("Resultado en GET dps 0x%08X\n", MV->registros[reg]);
+            //printf("Resultado en GET dps 0x%08X\n", MV->registros[reg]);
         }
         else if (sectorReg == 12)
         { 
@@ -621,9 +636,9 @@ void set(TVM *MV, uint32_t op1, uint32_t op2)
         }
         else
             dirLogica = (segmento << 16) | offset;
-        printf("Dir. Logica -> 0x%08X\n", dirLogica);
+        //printf("Dir. Logica -> 0x%08X\n", dirLogica);
         uint32_t dirFisica = obtenerDireccionFisica(MV, dirLogica);
-        printf("Dir. fisica -> 0x%08X\n", dirFisica);
+        //printf("Dir. fisica -> 0x%08X\n", dirFisica);
         uint32_t cantBytes = 4; // deberia ser 4 siempre sujeto a cambios por parte 2
         MV->registros[LAR] = dirLogica;
         MV->registros[MAR] = ((0x0004 << 16) & HIGH_MASK) | (dirFisica & LOW_MASK); // Cargo en los 2 byte mas significativos la cantidad de bytes en memoria y en los menos significativos la direccion fisica
@@ -643,16 +658,16 @@ void set(TVM *MV, uint32_t op1, uint32_t op2)
         if (sectorReg == 4)
         { 
             reg = reg & 0x0000000F;
-             printf("Resultado en SET antes 0x%08X\n", MV->registros[reg]);
+            //printf("Resultado en SET antes 0x%08X\n", MV->registros[reg]);
             MV->registros[reg] = (MV->registros[reg] & 0xFFFFFF00) | (op2 & 0xFF) ;
-            printf("Resultado en SET 0x%08X\n", MV->registros[reg]);
+            //printf("Resultado en SET 0x%08X\n", MV->registros[reg]);
         }
         else if (sectorReg == 8)
         { 
             reg = reg & 0x0000000F;
-            printf("Resultado en SET antes 0x%08X\n", MV->registros[reg]);
+            //printf("Resultado en SET antes 0x%08X\n", MV->registros[reg]);
             MV->registros[reg] = (MV->registros[reg] & 0xFFFF00FF) | ((op2 << 8) & 0xFF00);
-            printf("Resultado en SET 0x%08X\n", MV->registros[reg]);
+            //printf("Resultado en SET 0x%08X\n", MV->registros[reg]);
         }
         else if (sectorReg == 12)
         { 
@@ -672,10 +687,11 @@ void disassembler(TVM *MV)
     uint32_t direccionFisicaIP;
     uint32_t op1, op2, opc;
     uint32_t tipo_operando;
+    uint32_t opGenerico;
     uint32_t tipo_operando2;
     uint32_t finCS =(MV->tablaDescriptoresSegmentos[(MV->registros[CS] >> 16)] & LOW_MASK)  + ((MV->tablaDescriptoresSegmentos[(MV->registros[CS] >> 16)] & HIGH_MASK)>>16);
     uint32_t reg1, reg2;
-    uint32_t direccionActual =  obtenerDireccionFisica(MV,MV->registros[IP]);
+    uint32_t direccionActual =  obtenerDireccionFisica(MV,MV->registros[CS]);
     uint32_t sumaBytes = 0;
 
     while (direccionActual < finCS)
@@ -749,6 +765,7 @@ void disassembler(TVM *MV)
         // Segundo operando
         if (tipo_operando2 == TMEMORIA)
         {
+            
             registro = op2 >> 16;
             int32_t offset = (int8_t)(op2 & ML_MASK);
             printf("[");
@@ -759,15 +776,16 @@ void disassembler(TVM *MV)
         }
         else if (tipo_operando2 == TREGISTRO)
         {
-            registro = op2 & ML_MASK;
+            opGenerico = op2 ? op2 : op1;
+            registro = opGenerico & ML_MASK;
             printf("%s\n", operandoDisassembler(registro));
         }
         else if (tipo_operando2 == TINMEDIATO)
         {
             //ojo con esto, hardFIX para que se muestre bien el sys
-            uint32_t opGenerico = op2 ? op2 : op1;
-            uint32_t inmediato = get(MV, opGenerico, 4);
-            printf("%d\n", inmediato);
+            opGenerico = op2 ? op2 : op1;
+            uint32_t inmediato = get(MV,opGenerico, 4);
+            printf("%X\n", inmediato);
         }
         else
             printf("\n");

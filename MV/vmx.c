@@ -106,6 +106,7 @@ int main(int argc, char *argv[])
                     disassembler(&VM);
                     VM.error = 0;
                 }
+                
                 while ((VM.registros[IP] != -1) && ((VM.registros[IP] & LOW_MASK) < finCS) && (!VM.error))
                 {
                     direccionFisicaIP = obtenerDireccionFisica(&VM, VM.registros[IP]);
@@ -121,10 +122,8 @@ int main(int argc, char *argv[])
                 }
                 if (VM.error && VM.registros[IP] != -1)
                     mostrarError(VM.error);
-                for(int k=0; k < 70; k++){
-                        printf("Memoria %d %X\n",k, VM.memoria[k]);
-                }
-                VM.memoria = NULL;
+                
+                free(VM.memoria);
             }
             else
                 printf("La cabecera del archivo no lleva VMX25 o el archivo no existe");
