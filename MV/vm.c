@@ -511,7 +511,7 @@ int32_t get(TVM *MV, uint32_t op, uint8_t cantBytes)
 
     if (TOperando == TMEMORIA)
     {
-        printf("OPERANDO MEMORIA 0x%08X\n", op);
+        //printf("OPERANDO MEMORIA 0x%08X\n", op);
         int error = 0;
         uint32_t segmento; // selector de segmento (ej: DS = 0001) //  27 // 0xFFFF
         int32_t offset = (int16_t)(op & LOW_MASK); // offset lógico 0xFFFF
@@ -540,10 +540,10 @@ int32_t get(TVM *MV, uint32_t op, uint8_t cantBytes)
         }else{
             dirLogica = segmento| offset;
         }
-        printf("dir logica en GET 0x%08X\n",dirLogica);
+        //printf("dir logica en GET 0x%08X\n",dirLogica);
         uint32_t dirFisica = obtenerDireccionFisica(MV, dirLogica);
-        printf("BP -> 0x%08X\n", MV->registros[BP]);
-        printf("dir fisica  en GET 0x%08X\n",dirFisica);
+        //printf("BP -> 0x%08X\n", MV->registros[BP]);
+        //printf("dir fisica  en GET 0x%08X\n",dirFisica);
         for (int i = 0; i < cantBytes; i++)
         {
             valor = (valor << 8) | MV->memoria[dirFisica + i];
