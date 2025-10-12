@@ -120,9 +120,9 @@ int main(int argc, char *argv[])
                     else
                         VM.error = 3;
                 }
-                /*for(int i=2900;i<3353;i++){
+                for(int i=3150;i<3176;i++){
                     printf("Memoria[%d] -> 0x%02X\n",i,VM.memoria[i]);
-                }*/
+                }
                 if (VM.error && VM.registros[IP] != -1)
                     mostrarError(VM.error);
                 

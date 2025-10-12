@@ -341,7 +341,6 @@ void RND(TVM *MV)
 
 void PUSH(TVM *MV)
 {
-    //printf("SP antes de PUSH -> 0x%08X\n", MV->registros[SP]);
     int32_t op1 = get(MV, MV->registros[OP1], 4);
     printf("\nPUSH 0x%08X\n",op1);
     MV->registros[SP] -= 4;
