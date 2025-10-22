@@ -48,6 +48,10 @@
 
 typedef struct{
     uint8_t error;
+    char vmi[256];
+    char vmx[256];
+    uint8_t banderaBreakPoint;
+    uint32_t tamanioMemoria;
     uint8_t *memoria;
     uint32_t tablaDescriptoresSegmentos[CANT_TABLA];
     int32_t registros[CANT_REGISTROS];
@@ -55,6 +59,7 @@ typedef struct{
 
 
 void inicializarVM(char * nombreArchivo,TVM*MV, uint32_t tamanioMemoria,char * vectorParametros, int, int);
+void inicializarVMPorVMI(char * nombreArchVMI, TVM *MV);
 uint32_t obtenerDireccionFisica(TVM * MV, uint32_t direccionLogica);
 uint8_t obtenerSumaBytes(TVM *MV);
 char *operacionDisassembler(uint8_t codOp);

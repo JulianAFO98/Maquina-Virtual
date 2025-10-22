@@ -36,13 +36,13 @@ int main(int argc, char *argv[])
             {
                 strcpy(nombreArchVMX, argv[1]);
                 strcpy(nombreArchVMI, argv[2]);
-                valido = esProgramaValido(argv[1], "VMX25") && esProgramaValido(argv[2], "VMI25");
+                valido = esProgramaValido(argv[1], "VMX25");
             }
             else if (esVMI1 && esVMX2)
             {
                 strcpy(nombreArchVMI, argv[1]);
                 strcpy(nombreArchVMX, argv[2]);
-                valido = esProgramaValido(argv[1], "VMI25") && esProgramaValido(argv[2], "VMX25");
+                valido =  esProgramaValido(argv[2], "VMX25");
             }
             else if (esVMX1)
             { // Aca caeria el caso de la MV 1
@@ -54,7 +54,7 @@ int main(int argc, char *argv[])
             {
                 strcpy(nombreArchVMI, argv[1]);
                 nombreArchVMX[0] = '\0';
-                valido = esProgramaValido(argv[1], "VMI25");
+                valido = 1; // no es necesario validar el VMI solo el VMX
             }
 
             if (valido) // valido si las cabeceras internas de los archivos es valida "VMX25" o "VMI25"
@@ -72,33 +72,37 @@ int main(int argc, char *argv[])
                     // Si encontramos el flag -p
                     if (strcmp(argv[i], "-p") == 0)
                     {
-                        // procesar los argumentos que vienen despues de -p por ejemplo si p estan en la pos 2 entonces recorre desde pos + 1
-                        for (int l = i + 1; l < argc; l++)
-                        {
-                            cantParametros++;
-                            // Copia caracter a caracter
-                            for (int j = 0;; j++) // ciclo hasta encontrar un break
+                        if(*nombreArchVMX){ // si no hay vmx no tiene sentido pasar parametros
+                            // procesar los argumentos que vienen despues de -p por ejemplo si p estan en la pos 2 entonces recorre desde pos + 1
+                            for (int l = i + 1; l < argc; l++)
                             {
-                                cantCeldas++;
-                                vectorParametros[k++] = argv[l][j];
-                                // printf("%c\n", vectorParametros[k - 1]);
-                                if (argv[l][j] == '\0') // copio tambien el terminator
-                                    break;
+                                cantParametros++;
+                                // Copia caracter a caracter
+                                for (int j = 0;; j++) // ciclo hasta encontrar un break
+                                {
+                                    cantCeldas++;
+                                    vectorParametros[k++] = argv[l][j];
+                                    // printf("%c\n", vectorParametros[k - 1]);
+                                    if (argv[l][j] == '\0') // copio tambien el terminator
+                                        break;
+                                }
                             }
+
                         }
                     }
                 }
                 printf("Tamanio memoria -> %d\n", tamanioMemoria);
-
-                // tener en cuenta si VMI
-                if (*nombreArchVMX)
-                {
+                if (*nombreArchVMX && *nombreArchVMI){
+                    strcpy(VM.vmx, nombreArchVMX);
+                    strcpy(VM.vmi, nombreArchVMI);
                     inicializarVM(nombreArchVMX, &VM, tamanioMemoria, vectorParametros, cantParametros, cantCeldas);
-                    // pasar vector de Parametros p
-                }
-                if (*nombreArchVMI)
-                {
-                    // manejar el VMI
+                }else if(*nombreArchVMX){ 
+                    strcpy(VM.vmx, nombreArchVMX);
+                    inicializarVM(nombreArchVMX, &VM, tamanioMemoria, vectorParametros, cantParametros, cantCeldas);
+                }else {
+                    printf("WUWWWWW\n");
+                    strcpy(VM.vmi, nombreArchVMI);
+                    inicializarVMPorVMI(nombreArchVMI, &VM);
                 }
                 uint32_t finCS = (VM.tablaDescriptoresSegmentos[(VM.registros[CS] >> 16)] & LOW_MASK);
                 if (mostrarDisAssembler)
@@ -114,17 +118,19 @@ int main(int argc, char *argv[])
                     cargarAmbosOperandos(&VM, direccionFisicaIP);
                     if (!esSalto(VM.registros[OPC]) && VM.registros[IP] >= 0)
                         VM.registros[IP] += obtenerSumaBytes(&VM) + 1;
-                    
-                    if (operaciones[VM.registros[OPC]] != NULL)
+                    if (operaciones[VM.registros[OPC]] != NULL){
                         operaciones[VM.registros[OPC]](&VM);
+                        if(VM.banderaBreakPoint == 1){
+                            SYS_Breakpoint(&VM);
+                        }
+                    }
                     else
                         VM.error = 3;
                 }
-                /*
-                for(int i=3150;i<3176;i++){
+                /*for(int i=1496;i<1600;i++){
                     printf("Memoria[%d] -> 0x%02X\n",i,VM.memoria[i]);
-                }
-                */
+                }*/
+                
                 if (VM.error && VM.registros[IP] != -1)
                     mostrarError(VM.error);
                 
