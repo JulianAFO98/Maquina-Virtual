@@ -776,7 +776,7 @@ void set(TVM *MV, uint32_t op1, uint32_t op2)
         int32_t offset = (int16_t)(op1 & LOW_MASK); // offset lógico 0xFFFF
         uint32_t regBase = (op1 >> 16) & ML_MASK;   // registro base si hay (ej: 0D = EDX)  // 0xFF
         uint8_t sectorReg = 0;
-        printf("Opernado Set 0x%08X\n", op1);
+       // printf("Opernado Set 0x%08X\n", op1);
 
         //Calculo de segmentos
          if(regBase == 0x1B || regBase == 0x9B || regBase == 0xCB)
@@ -811,9 +811,9 @@ void set(TVM *MV, uint32_t op1, uint32_t op2)
         else{
             dirLogica = (segmento << 16) | offset;
         }
-        printf("Dir. Logica -> 0x%08X\n", dirLogica);
+        //printf("Dir. Logica -> 0x%08X\n", dirLogica);
         uint32_t dirFisica = obtenerDireccionFisica(MV, dirLogica);
-        printf("Dir. fisica -> 0x%08X\n", dirFisica);
+        //printf("Dir. fisica -> 0x%08X\n", dirFisica);
         //printf("Sector Reg -> %d\n", sectorReg);
         uint32_t cantBytesEscritura; // deberia ser 4 siempre sujeto a cambios por parte 2
 
@@ -951,7 +951,7 @@ void disassembler(TVM *MV)
 
             registro = op2 >> 16;
             int32_t offset = (int8_t)(op2 & ML_MASK);
-            printf("%s", operandoDisassemblerMemoria(registro));
+            printf("[%s", operandoDisassemblerMemoria(registro));
             if (offset != 0)
                 printf("%+d", offset);
             printf("]\n");
