@@ -115,6 +115,8 @@ int main(int argc, char *argv[])
                 {
                     direccionFisicaIP = obtenerDireccionFisica(&VM, VM.registros[IP]);
                     interpretaInstruccion(&VM, VM.memoria[direccionFisicaIP]);
+                   // printf("0x%08X fisica:%d\n",VM.registros[IP],direccionFisicaIP);
+                    //printf("%s\n",operacionDisassembler(VM.registros[OPC]));
                     cargarAmbosOperandos(&VM, direccionFisicaIP);
                     if (!esSalto(VM.registros[OPC]) && VM.registros[IP] >= 0)
                         VM.registros[IP] += obtenerSumaBytes(&VM) + 1;

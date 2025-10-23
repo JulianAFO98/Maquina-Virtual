@@ -85,6 +85,7 @@ main:       push    bp
             call    list_print          ; list_print (head)
             add     sp, 4  
 
+            call print_algo
             sys     0xF
 
             pop     ebx

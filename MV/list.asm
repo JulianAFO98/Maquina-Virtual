@@ -115,3 +115,16 @@ insert_fin:     pop     edx
                 mov     sp,bp
                 pop     bp
                 ret
+
+
+print_algo:   push bp
+                    mov bp,sp
+                    push edx
+                    push ecx
+                    mov edx,ks
+                    sys 4
+                    pop ecx
+                    pop edx
+                    mov sp,bp
+                    pop bp
+                    ret

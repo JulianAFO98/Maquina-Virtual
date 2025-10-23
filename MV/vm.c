@@ -199,6 +199,10 @@ void inicializarVM(char *nombreArchivo, TVM *VM, uint32_t tamanioMemoria, char *
         uint16_t offsetEntryPoint = getEntryPointOffset(nombreArchivo);
         uint32_t ipLogica = VM->registros[CS] | offsetEntryPoint;
         VM->registros[IP] = ipLogica;
+        printf("offset %d\n",offsetEntryPoint);
+        printf("logica 0x%08X\n",ipLogica);
+        printf("fisica 0x%08X\n",obtenerDireccionFisica(VM,ipLogica));
+
         uint32_t offSetSS = VM->tablaDescriptoresSegmentos[(VM->registros[SS] >> 16)] & LOW_MASK;
         VM->registros[SP] = VM->registros[SS] + offSetSS; // me caigo del segmento SS
         // printf("SP -> 0x%08X\n", VM->registros[SP]);
@@ -550,7 +554,7 @@ uint32_t getEntryPointOffset(char *nombreArchivo)
     masSignificativo = fgetc(VMX);
     menosSignificativo = fgetc(VMX);
     fclose(VMX);
-    int entryPointOffset = (masSignificativo << 16) | menosSignificativo;
+    int entryPointOffset = (masSignificativo << 8) | menosSignificativo;
     return entryPointOffset;
 }
 
