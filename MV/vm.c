@@ -91,6 +91,11 @@ void inicializarVM(char *nombreArchivo, TVM *VM, uint32_t tamanioMemoria, char *
         printf("Tamanio DS %X\n", tamanio_DS);
         printf("Tamanio ES %X\n", tamanio_ES);
         printf("Tamanio SS %X\n", tamanio_SS);
+        uint32_t tamanioFinalMemoria = tamanio_PS+tamanio_KS+tamanio_CS+tamanio_DS+tamanio_ES+tamanio_SS;
+        if(tamanioFinalMemoria>tamanioMemoria){
+            VM->error=4;
+            return;
+        }
         if (argcParam != 0)
         {
             VM->tablaDescriptoresSegmentos[contSegmentos++] = tamanio_PS;
@@ -293,7 +298,7 @@ uint32_t obtenerDireccionFisica(TVM *MV, uint32_t direccionLogica)
     uint32_t direccionFisica = direccionBase + offSet;
     // good
     uint32_t limiteSegmento = tamanioSegmento + direccionBase;
-    if (direccionFisica < direccionBase )
+    if (direccionFisica < direccionBase || direccionFisica>limiteSegmento)
        MV->error = 1;
     return direccionFisica;
 }
@@ -310,6 +315,15 @@ void mostrarError(uint8_t error)
         break;
     case 3:
         printf("Operacion no valida");
+        break;
+    case 4:
+        printf("Memoria insuficiente");
+        break;
+    case 5:
+        printf("Stack overflow");
+        break;
+    case 6:
+        printf("Stack underflow");
         break;
     }
 }
@@ -809,7 +823,6 @@ void set(TVM *MV, uint32_t op1, uint32_t op2)
                 regBase = 0x1C;
             else
                 regBase = regBase & 0x0000000F;
-            printf("Reg base %X\n", regBase);
             dirLogica = segmento | (MV->registros[regBase] + offset);
         }
         else{

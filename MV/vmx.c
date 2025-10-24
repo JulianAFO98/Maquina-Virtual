@@ -100,23 +100,21 @@ int main(int argc, char *argv[])
                     strcpy(VM.vmx, nombreArchVMX);
                     inicializarVM(nombreArchVMX, &VM, tamanioMemoria, vectorParametros, cantParametros, cantCeldas);
                 }else {
-                    printf("WUWWWWW\n");
                     strcpy(VM.vmi, nombreArchVMI);
                     inicializarVMPorVMI(nombreArchVMI, &VM);
                 }
                 uint32_t finCS = (VM.tablaDescriptoresSegmentos[(VM.registros[CS] >> 16)] & LOW_MASK);
-                if (mostrarDisAssembler)
+                if (mostrarDisAssembler && VM.error!=4)
                 {
                     disassembler(&VM);
                     VM.error = 0;
                 }
-                
-                while ((VM.registros[IP] != -1) && ((VM.registros[IP] & LOW_MASK) < finCS) && (!VM.error))
+                uint32_t SegCS = (VM.registros[CS] & HIGH_MASK);
+                while ((VM.registros[IP] != -1) && ((VM.registros[IP] & LOW_MASK) < finCS) && ((VM.registros[IP] & HIGH_MASK) == SegCS) && (!VM.error))
                 {
                     direccionFisicaIP = obtenerDireccionFisica(&VM, VM.registros[IP]);
                     interpretaInstruccion(&VM, VM.memoria[direccionFisicaIP]);
                    // printf("0x%08X fisica:%d\n",VM.registros[IP],direccionFisicaIP);
-                    //printf("%s\n",operacionDisassembler(VM.registros[OPC]));
                     cargarAmbosOperandos(&VM, direccionFisicaIP);
                     if (!esSalto(VM.registros[OPC]) && VM.registros[IP] >= 0)
                         VM.registros[IP] += obtenerSumaBytes(&VM) + 1;
@@ -128,6 +126,7 @@ int main(int argc, char *argv[])
                     }
                     else
                         VM.error = 3;
+                    
                 }
                 if (VM.error && VM.registros[IP] != -1)
                     mostrarError(VM.error);
