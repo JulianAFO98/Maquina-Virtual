@@ -463,7 +463,7 @@ void PUSH(TVM *MV)
     }
     uint32_t limiteSegmento = obtenerDireccionFisica(MV,MV->registros[SS]);
     if(dirFisica<limiteSegmento){
-        MV->error=5;
+       // MV->error=5;
     }
 }
 
@@ -480,7 +480,7 @@ void POP(TVM *MV)
 
     uint32_t limiteSegmento = obtenerDireccionFisica(MV,MV->registros[SS]) + (MV->tablaDescriptoresSegmentos[MV->registros[SS]>>16]  & LOW_MASK);
     if(dirFisica>limiteSegmento){
-        MV->error=6;
+       // MV->error=6;
     }
 }
 

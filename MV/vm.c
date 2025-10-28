@@ -2,7 +2,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include "vm.h"
-
+#include "funciones.h"
 void inicializarVM(char *nombreArchivo, TVM *VM, uint32_t tamanioMemoria, char *vectorParametros, int argcParam, int celdasPS)
 {
     int c;
@@ -91,9 +91,10 @@ void inicializarVM(char *nombreArchivo, TVM *VM, uint32_t tamanioMemoria, char *
         printf("Tamanio DS %X\n", tamanio_DS);
         printf("Tamanio ES %X\n", tamanio_ES);
         printf("Tamanio SS %X\n", tamanio_SS);
-        uint32_t tamanioFinalMemoria = tamanio_PS+tamanio_KS+tamanio_CS+tamanio_DS+tamanio_ES+tamanio_SS;
-        if(tamanioFinalMemoria>tamanioMemoria){
-            VM->error=4;
+        uint32_t tamanioFinalMemoria = tamanio_PS + tamanio_KS + tamanio_CS + tamanio_DS + tamanio_ES + tamanio_SS;
+        if (tamanioFinalMemoria > tamanioMemoria)
+        {
+            VM->error = 4;
             return;
         }
         if (argcParam != 0)
@@ -204,14 +205,30 @@ void inicializarVM(char *nombreArchivo, TVM *VM, uint32_t tamanioMemoria, char *
         uint16_t offsetEntryPoint = getEntryPointOffset(nombreArchivo);
         uint32_t ipLogica = VM->registros[CS] | offsetEntryPoint;
         VM->registros[IP] = ipLogica;
-        printf("offset %d\n",offsetEntryPoint);
-        printf("logica 0x%08X\n",ipLogica);
-        printf("fisica 0x%08X\n",obtenerDireccionFisica(VM,ipLogica));
 
         uint32_t offSetSS = VM->tablaDescriptoresSegmentos[(VM->registros[SS] >> 16)] & LOW_MASK;
         VM->registros[SP] = VM->registros[SS] + offSetSS; // me caigo del segmento SS
-        // printf("SP -> 0x%08X\n", VM->registros[SP]);
-        // printf("Direccion fisica del SP -> 0x%08X\n", obtenerDireccionFisica(VM, VM->registros[SP]));
+
+        printf("args %d\n", argcParam);
+
+        uint32_t dirFisica;
+        VM->registros[SP] -= 4;
+        dirFisica = obtenerDireccionFisica(VM, VM->registros[SP]);
+        uint32_t valor = argcParam ? 0 : (uint32_t)-1;
+        for (int i = 0; i < 4; i++)
+            VM->memoria[dirFisica + i] = (valor >> (8 * (3 - i))) & ML_MASK;
+
+        // PUSH argcParam
+        VM->registros[SP] -= 4;
+        dirFisica = obtenerDireccionFisica(VM, VM->registros[SP]);
+        for (int i = 0; i < 4; i++)
+            VM->memoria[dirFisica + i] = (argcParam >> (8 * (3 - i))) & ML_MASK;
+
+        // PUSH -1
+        VM->registros[SP] -= 4;
+        dirFisica = obtenerDireccionFisica(VM, VM->registros[SP]);
+        for (int i = 0; i < 4; i++)
+            VM->memoria[dirFisica + i] = ((uint32_t)-1 >> (8 * (3 - i))) & ML_MASK;
     }
     // Normaliza registros
     for (int q = 0xA; q < 0x10; q++)
@@ -227,13 +244,15 @@ void inicializarVM(char *nombreArchivo, TVM *VM, uint32_t tamanioMemoria, char *
     fclose(VMX);
 }
 
-void inicializarVMPorVMI(char *nombreArchVMI, TVM *MV) {
+void inicializarVMPorVMI(char *nombreArchVMI, TVM *MV)
+{
     char cabecera[TAMANIO_CABECERA];
     uint8_t version;
     FILE *VMI = fopen(nombreArchVMI, "rb");
-    if (VMI != NULL) {
+    if (VMI != NULL)
+    {
         // Cabecera
-        int i=0;
+        int i = 0;
         char c;
         while (i < TAMANIO_CABECERA && !feof(VMI))
         {
@@ -247,18 +266,19 @@ void inicializarVMPorVMI(char *nombreArchVMI, TVM *MV) {
         MV->tamanioMemoria |= fgetc(VMI);
         printf("Tamanio memoria%d\n", MV->tamanioMemoria);
         // Registros
-        for (int i = 0; i < CANT_REGISTROS; i++) {
+        for (int i = 0; i < CANT_REGISTROS; i++)
+        {
             uint8_t b0 = fgetc(VMI);
             uint8_t b1 = fgetc(VMI);
             uint8_t b2 = fgetc(VMI);
             uint8_t b3 = fgetc(VMI);
-           /*if((i >= 26) && (i<31)){
-                printf("b0 0x%02X\n", b0);
-                printf("b1 0x%02X\n", b1);
-                printf("b2 0x%02X\n", b2);
-                printf("b3 0x%02X\n", b3);
-                printf("\n");
-            }*/
+            /*if((i >= 26) && (i<31)){
+                 printf("b0 0x%02X\n", b0);
+                 printf("b1 0x%02X\n", b1);
+                 printf("b2 0x%02X\n", b2);
+                 printf("b3 0x%02X\n", b3);
+                 printf("\n");
+             }*/
             MV->registros[i] = ((b0 << 24) | (b1 << 16) | (b2 << 8) | b3);
         }
 
@@ -267,14 +287,16 @@ void inicializarVMPorVMI(char *nombreArchVMI, TVM *MV) {
         }*/
 
         // Tabla de descriptores
-        for (int i = 0; i < CANT_TABLA; i++) {
+        for (int i = 0; i < CANT_TABLA; i++)
+        {
             uint8_t b0 = fgetc(VMI);
             uint8_t b1 = fgetc(VMI);
             uint8_t b2 = fgetc(VMI);
             uint8_t b3 = fgetc(VMI);
             MV->tablaDescriptoresSegmentos[i] = (b0 << 24) | (b1 << 16) | (b2 << 8) | b3;
         }
-         for(int i=0;i<8;i++){
+        for (int i = 0; i < 8; i++)
+        {
             printf("Tabla descriptores de segmentos -> 0x%08X\n", MV->tablaDescriptoresSegmentos[i]);
         }
 
@@ -282,7 +304,9 @@ void inicializarVMPorVMI(char *nombreArchVMI, TVM *MV) {
         MV->memoria = (uint8_t *)malloc(MV->tamanioMemoria * sizeof(uint8_t));
         fread(MV->memoria, sizeof(uint8_t), MV->tamanioMemoria, VMI);
         fclose(VMI);
-    } else {
+    }
+    else
+    {
         printf("No se pudo abrir el archivo VMI.\n");
     }
     MV->error = 0;
@@ -298,9 +322,9 @@ uint32_t obtenerDireccionFisica(TVM *MV, uint32_t direccionLogica)
     uint32_t direccionFisica = direccionBase + offSet;
     // good
     uint32_t limiteSegmento = tamanioSegmento + direccionBase;
-    if (direccionFisica < direccionBase || direccionFisica>limiteSegmento)
-       MV->error = 1;
-    return direccionFisica;
+    if (direccionFisica < direccionBase || direccionFisica > limiteSegmento)
+        //  MV->error = 1;
+        return direccionFisica;
 }
 
 void mostrarError(uint8_t error)
@@ -486,66 +510,68 @@ char *operandoDisassembler(uint8_t op)
     }
 }
 
-char *operandoDisassemblerMemoria(uint8_t op){
-    switch(op){
-        case 0xA:
-            return "l[EAX";
-        case 0x8A:
-            return "w[EAX";
-        case 0xCA:
-            return "b[EAX";
-        case 0xB:
-            return "l[EBX";
-        case 0x8B:
-            return "w[EBX";
-        case 0xCB:
-            return "b[EBX";
-        case 0xC:
-            return "l[ECX";
-        case 0x8C:
-            return "w[ECX";
-        case 0xCC:
-            return "b[ECX";
-        case 0xD:
-            return "l[EDX";
-        case 0x8D:
-            return "w[EDX";
-        case 0xCD:
-            return "b[EDX";
-        case 0xE:
-            return "l[EEX";
-        case 0x8E:
-            return "w[EEX";
-        case 0xCE:
-            return "b[EEX";
-        case 0xF:
-            return "l[EFX";
-        case 0x8F:
-            return "w[EFX";
-        case 0xCF:
-            return "b[EFX";
-        case 0x1B:
-            return "[0";
-        case 0xDB:
-            return "b[0";
-        case 0x9B:
-            return "w[0";
-        case 0x1A:
-            return "CS";
-        case 0x1C:
-            return "ES";
-        case 0x1D:
-            return "SS";
-        case 0x1E:
-            return "KS";
-        case 0x1F:
-            return "PS";
-        case 0x7:
-            return "SP";
-        case 0x8:
-            return "BP";
-        default:
-            return "No existe";
+char *operandoDisassemblerMemoria(uint8_t op)
+{
+    switch (op)
+    {
+    case 0xA:
+        return "l[EAX";
+    case 0x8A:
+        return "w[EAX";
+    case 0xCA:
+        return "b[EAX";
+    case 0xB:
+        return "l[EBX";
+    case 0x8B:
+        return "w[EBX";
+    case 0xCB:
+        return "b[EBX";
+    case 0xC:
+        return "l[ECX";
+    case 0x8C:
+        return "w[ECX";
+    case 0xCC:
+        return "b[ECX";
+    case 0xD:
+        return "l[EDX";
+    case 0x8D:
+        return "w[EDX";
+    case 0xCD:
+        return "b[EDX";
+    case 0xE:
+        return "l[EEX";
+    case 0x8E:
+        return "w[EEX";
+    case 0xCE:
+        return "b[EEX";
+    case 0xF:
+        return "l[EFX";
+    case 0x8F:
+        return "w[EFX";
+    case 0xCF:
+        return "b[EFX";
+    case 0x1B:
+        return "[0";
+    case 0xDB:
+        return "b[0";
+    case 0x9B:
+        return "w[0";
+    case 0x1A:
+        return "CS";
+    case 0x1C:
+        return "ES";
+    case 0x1D:
+        return "SS";
+    case 0x1E:
+        return "KS";
+    case 0x1F:
+        return "PS";
+    case 0x7:
+        return "SP";
+    case 0x8:
+        return "BP";
+    default:
+        return "No existe";
     }
 }
 
@@ -657,44 +683,47 @@ int32_t get(TVM *MV, uint32_t op, uint8_t cantBytes)
 
     if (TOperando == TMEMORIA)
     {
-        //printf("OPERANDO MEMORIA 0x%08X\n", op);
+        // printf("OPERANDO MEMORIA 0x%08X\n", op);
         int error = 0;
-        uint32_t segmento = 0;                         // selector de segmento (ej: DS = 0001) //  27 // 0xFFFF
+        uint32_t segmento = 0;                     // selector de segmento (ej: DS = 0001) //  27 // 0xFFFF
         int32_t offset = (int16_t)(op & LOW_MASK); // offset lógico 0xFFFF
         uint32_t regBase = (op >> 16) & ML_MASK;   // registro base si hay (ej: 0D = EDX)  // 0xFF
         uint8_t sectorReg = 0;
         uint32_t dirLogica;
-       //Calculo de segmentos
-        if(regBase == 0x1B || regBase == 0x9B || regBase == 0xCB)
+        // Calculo de segmentos
+        if (regBase == 0x1B || regBase == 0x9B || regBase == 0xCB)
         {
             segmento = MV->registros[DS] & HIGH_MASK;
         }
-        else if(regBase == 0x1C || regBase == 0x9C || regBase == 0xCC)
+        else if (regBase == 0x1C || regBase == 0x9C || regBase == 0xCC)
         {
             segmento = MV->registros[ES] & HIGH_MASK;
         }
-        else if(regBase == 0x1D || regBase == 0x9D || regBase == 0xCD || regBase == 7 || regBase == 8)
+        else if (regBase == 0x1D || regBase == 0x9D || regBase == 0xCD || regBase == 7 || regBase == 8)
         {
             segmento = MV->registros[SS] & HIGH_MASK;
-        }else if (regBase == 0xA || regBase == 0xB || regBase == 0xC || regBase == 0xD || regBase == 0xE || regBase == 0xF){
+        }
+        else if (regBase == 0xA || regBase == 0xB || regBase == 0xC || regBase == 0xD || regBase == 0xE || regBase == 0xF)
+        {
             segmento = 0;
-        }else{
+        }
+        else
+        {
             segmento = MV->registros[DS] & HIGH_MASK;
         }
-
 
         if (regBase != 0)
         {
             sectorReg = (regBase & 0xF0) >> 6;
-            if(regBase == 0x1B || regBase == 0x9B || regBase == 0xDB)
+            if (regBase == 0x1B || regBase == 0x9B || regBase == 0xDB)
                 regBase = 0x1B;
-            else if(regBase == 0x1C || regBase == 0x9C || regBase == 0xDC)
+            else if (regBase == 0x1C || regBase == 0x9C || regBase == 0xDC)
                 regBase = 0x1C;
             else
                 regBase = regBase & 0x0000000F;
-            //printf("REG BASE GET %X\n", regBase);
+            // printf("REG BASE GET %X\n", regBase);
             dirLogica = segmento | (MV->registros[regBase] + offset);
-            //printf("MV->registros[regBase] 0x%08X\n", MV->registros[regBase]);
+            // printf("MV->registros[regBase] 0x%08X\n", MV->registros[regBase]);
         }
         else
         {
@@ -702,15 +731,20 @@ int32_t get(TVM *MV, uint32_t op, uint8_t cantBytes)
         }
         uint32_t dirFisica = obtenerDireccionFisica(MV, dirLogica);
         uint32_t cantBytesLectura;
-        //printf("dir fisica en GET 0x%08X\n",dirFisica);
-        //printf("dir Logica en GET 0x%08X\n",dirLogica);
-        //printf("Sector Reg GET %d\n", sectorReg);
-        //printf("offser GET %d\n", offset);
-        if (sectorReg == 2){
+        // printf("dir fisica en GET 0x%08X\n",dirFisica);
+        // printf("dir Logica en GET 0x%08X\n",dirLogica);
+        // printf("Sector Reg GET %d\n", sectorReg);
+        // printf("offser GET %d\n", offset);
+        if (sectorReg == 2)
+        {
             cantBytesLectura = cantBytes - 2;
-        }else if(sectorReg == 3){
+        }
+        else if (sectorReg == 3)
+        {
             cantBytesLectura = cantBytes - 3;
-        }else{
+        }
+        else
+        {
             cantBytesLectura = cantBytes;
         }
 
@@ -718,7 +752,7 @@ int32_t get(TVM *MV, uint32_t op, uint8_t cantBytes)
         {
             valor = (valor << 8) | MV->memoria[dirFisica + i];
         }
-        //printf("Valor get %X\n", valor);
+        // printf("Valor get %X\n", valor);
         MV->registros[LAR] = dirLogica;
         MV->registros[MAR] = ((cantBytes << 16) & HIGH_MASK) | (dirFisica & LOW_MASK);
         MV->registros[MBR] = valor;
@@ -727,7 +761,7 @@ int32_t get(TVM *MV, uint32_t op, uint8_t cantBytes)
     {
         uint32_t reg = (op & ML_MASK);
         uint32_t sectorReg = (op & 0x000000F0) >> 4;
-        //printf("Operando 2 get 0x%08X\n", op);
+        // printf("Operando 2 get 0x%08X\n", op);
 
         if (sectorReg == 4)
         {
@@ -745,7 +779,7 @@ int32_t get(TVM *MV, uint32_t op, uint8_t cantBytes)
         }
         else if (sectorReg == 12)
         {
-            // AX 
+            // AX
             reg = reg & 0x0000000F;
             valor = (uint16_t)(MV->registros[reg] & 0xFFFF);
             valor = (int32_t)(int16_t)valor; // extension de signo
@@ -753,7 +787,7 @@ int32_t get(TVM *MV, uint32_t op, uint8_t cantBytes)
         else
         {
             // EAX completo
-            //printf("Registro KS -> 0x%08X\n", MV->registros[reg]);
+            // printf("Registro KS -> 0x%08X\n", MV->registros[reg]);
             valor = (int32_t)MV->registros[reg];
         }
     }
@@ -794,51 +828,61 @@ void set(TVM *MV, uint32_t op1, uint32_t op2)
         int32_t offset = (int16_t)(op1 & LOW_MASK); // offset lógico 0xFFFF
         uint32_t regBase = (op1 >> 16) & ML_MASK;   // registro base si hay (ej: 0D = EDX)  // 0xFF
         uint8_t sectorReg = 0;
-       // printf("Opernado Set 0x%08X\n", op1);
+        // printf("Opernado Set 0x%08X\n", op1);
 
-        //Calculo de segmentos
-         if(regBase == 0x1B || regBase == 0x9B || regBase == 0xCB)
+        // Calculo de segmentos
+        if (regBase == 0x1B || regBase == 0x9B || regBase == 0xCB)
         {
             segmento = MV->registros[DS] & HIGH_MASK;
         }
-        else if(regBase == 0x1C || regBase == 0x9C || regBase == 0xCC)
+        else if (regBase == 0x1C || regBase == 0x9C || regBase == 0xCC)
         {
             segmento = MV->registros[ES] & HIGH_MASK;
         }
-        else if(regBase == 0x1D || regBase == 0x9D || regBase == 0xCD || regBase == 7 || regBase == 8)
+        else if (regBase == 0x1D || regBase == 0x9D || regBase == 0xCD || regBase == 7 || regBase == 8)
         {
             segmento = MV->registros[SS] & HIGH_MASK;
-        }else if (regBase == 0xA || regBase == 0xB || regBase == 0xC || regBase == 0xD || regBase == 0xE || regBase == 0xF){
+        }
+        else if (regBase == 0xA || regBase == 0xB || regBase == 0xC || regBase == 0xD || regBase == 0xE || regBase == 0xF)
+        {
             segmento = 0;
-        }else{
+        }
+        else
+        {
             segmento = MV->registros[DS] & HIGH_MASK;
         }
 
         if (regBase != 0)
         {
             sectorReg = (regBase & 0xF0) >> 6;
-            if(regBase == 0x1B || regBase == 0x9B || regBase == 0xDB)
+            if (regBase == 0x1B || regBase == 0x9B || regBase == 0xDB)
                 regBase = 0x1B;
-            else if(regBase == 0x1C || regBase == 0x9C || regBase == 0xDC)
+            else if (regBase == 0x1C || regBase == 0x9C || regBase == 0xDC)
                 regBase = 0x1C;
             else
                 regBase = regBase & 0x0000000F;
             dirLogica = segmento | (MV->registros[regBase] + offset);
         }
-        else{
+        else
+        {
             dirLogica = (segmento << 16) | offset;
         }
-        //printf("Dir. Logica -> 0x%08X\n", dirLogica);
+        // printf("Dir. Logica -> 0x%08X\n", dirLogica);
         uint32_t dirFisica = obtenerDireccionFisica(MV, dirLogica);
-        //printf("Dir. fisica -> 0x%08X\n", dirFisica);
-        //printf("Sector Reg -> %d\n", sectorReg);
+        // printf("Dir. fisica -> 0x%08X\n", dirFisica);
+        // printf("Sector Reg -> %d\n", sectorReg);
         uint32_t cantBytesEscritura; // deberia ser 4 siempre sujeto a cambios por parte 2
 
-        if(sectorReg == 2){
+        if (sectorReg == 2)
+        {
             cantBytesEscritura = 2;
-        }else if(sectorReg == 3){
+        }
+        else if (sectorReg == 3)
+        {
             cantBytesEscritura = 1;
-        }else{
+        }
+        else
+        {
             cantBytesEscritura = 4;
         }
         MV->registros[LAR] = dirLogica;
@@ -847,7 +891,7 @@ void set(TVM *MV, uint32_t op1, uint32_t op2)
         // se puede extraer y hacer un  prodimiento asigna memoria con LAR MAR Y MRB
 
         uint32_t valor = (uint32_t)op2;
-      // printf("Operando 2 SET 0x%08X\n", op2);
+        // printf("Operando 2 SET 0x%08X\n", op2);
         for (int i = 0; i < cantBytesEscritura; i++)
         {
             MV->memoria[dirFisica + i] = (valor >> (8 * (cantBytesEscritura - 1 - i))) & 0xFF;
@@ -991,7 +1035,6 @@ void disassembler(TVM *MV)
         direccionActual += sumaBytes + 1;
     }
 }
-
 
 void setAC(TVM *VM, int32_t value)
 {
