@@ -103,6 +103,7 @@ int main(int argc, char *argv[])
                     strcpy(VM.vmi, nombreArchVMI);
                     inicializarVMPorVMI(nombreArchVMI, &VM);
                 }
+                //printf("A\n");
                 uint32_t finCS = (VM.tablaDescriptoresSegmentos[(VM.registros[CS] >> 16)] & LOW_MASK);
                 if (mostrarDisAssembler && VM.error!=4)
                 {
@@ -110,16 +111,25 @@ int main(int argc, char *argv[])
                     VM.error = 0;
                 }
                 uint32_t SegCS = (VM.registros[CS] & HIGH_MASK);
+                //printf("B\n");
+
                 while ((VM.registros[IP] != -1) && ((VM.registros[IP] & LOW_MASK) < finCS) && ((VM.registros[IP] & HIGH_MASK) == SegCS) && (!VM.error))
                 {
                     direccionFisicaIP = obtenerDireccionFisica(&VM, VM.registros[IP]);
                     interpretaInstruccion(&VM, VM.memoria[direccionFisicaIP]);
-                   // printf("0x%08X fisica:%d\n",VM.registros[IP],direccionFisicaIP);
+                  //  printf("B.1\n");
+
+                    //printf("0x%08X fisica:%d\n",VM.registros[IP],direccionFisicaIP);
                     cargarAmbosOperandos(&VM, direccionFisicaIP);
                     if (!esSalto(VM.registros[OPC]) && VM.registros[IP] >= 0)
                         VM.registros[IP] += obtenerSumaBytes(&VM) + 1;
+                   // printf("%s\n",operacionDisassembler(VM.registros[OPC]));
+                    //printf("B.2\n");
                     if (operaciones[VM.registros[OPC]] != NULL){
+                      //  printf("B.3\n");
                         operaciones[VM.registros[OPC]](&VM);
+                        //printf("B.4\n");
+
                         if(VM.banderaBreakPoint == 1){
                             SYS_Breakpoint(&VM);
                         }
@@ -128,6 +138,7 @@ int main(int argc, char *argv[])
                         VM.error = 3;
                     
                 }
+                //printf("C\n");
                 if (VM.error && VM.registros[IP] != -1)
                     mostrarError(VM.error);
                 

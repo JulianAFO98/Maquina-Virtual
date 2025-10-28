@@ -177,7 +177,7 @@ void generarVMI(TVM *MV)
     {
         // escribir cabera "VMI25" / version / tamanio memoria
         uint16_t version = 1; // version 1
-        uint32_t tamanioMemoria = MV->tamanioMemoria;
+        uint32_t tamanioMemoria = MV->tamanioMemoria / 1024;
         fwrite("VMI25", 1, TAMANIO_CABECERA, archivoVMI);         // escribir cabecera "VMI25"
         fwrite(&version, sizeof(uint8_t), 1, archivoVMI);         // escribir version
         // escribir tamaño de memoria en 2 bytes
@@ -301,12 +301,13 @@ void STOP(TVM *MV)
 }
 void MOV(TVM *MV)
 {
-    // printf("\n------MOV-------\n");
-    // printf("Operando 1 -> 0x%08X\n", MV->registros[OP1]);
-    // printf("Operando 2 -> 0x%08X\n", MV->registros[OP2]);
-    // printf("Get Operando 2 0x%08X\n", get(MV, MV->registros[OP2], 4));
+     //printf("\n------MOV-------\n");
+     //printf("Operando 1 -> 0x%08X\n", MV->registros[OP1]);
+     //printf("Operando 2 -> 0x%08X\n", MV->registros[OP2]);
+     //printf("Get Operando 2 0x%08X\n", get(MV, MV->registros[OP2], 4));
     // printf("--------------\n");
     set(MV, MV->registros[OP1], get(MV, MV->registros[OP2], 4));
+   // printf("Get despues del set 0x%08X\n", get(MV, MV->registros[OP1], 4));
 }
 void ADD(TVM *MV)
 {
@@ -463,7 +464,7 @@ void PUSH(TVM *MV)
     }
     uint32_t limiteSegmento = obtenerDireccionFisica(MV,MV->registros[SS]);
     if(dirFisica<limiteSegmento){
-       // MV->error=5;
+        MV->error=5;
     }
 }
 
@@ -480,7 +481,7 @@ void POP(TVM *MV)
 
     uint32_t limiteSegmento = obtenerDireccionFisica(MV,MV->registros[SS]) + (MV->tablaDescriptoresSegmentos[MV->registros[SS]>>16]  & LOW_MASK);
     if(dirFisica>limiteSegmento){
-       // MV->error=6;
+        MV->error=6;
     }
 }
 
