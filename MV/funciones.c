@@ -9,6 +9,7 @@ void (*operaciones[32])(TVM *MV) = {
     STOP, MOV, ADD, SUB, MUL, DIV, CMP, SHL,
     SHR, SAR, AND, OR, XOR, SWAP, LDL, LDH, RND};
 
+int i = 0;
 void leerSYS(TVM *MV, uint32_t dirFisica, uint32_t formato, uint32_t bytesWR)
 {
     int32_t valor = 0;
@@ -21,15 +22,40 @@ void leerSYS(TVM *MV, uint32_t dirFisica, uint32_t formato, uint32_t bytesWR)
     else if (formato == 0x04)
         scanf("%o", &valor);
     else if (formato == 0x08)
-        scanf("%x", &valor);
+    {
+        unsigned int temp;
+        scanf("%x", &temp);
+        if (bytesWR == 1)
+            valor = (int32_t)(int8_t)temp;
+        else if (bytesWR == 2)
+            valor = (int32_t)(int16_t)temp;
+        else
+            valor = (int32_t)temp;
+    }
     else if (formato == 0x10)
     {
         char bin[65];
         scanf("%64s", bin);
         valor = strtol(bin, NULL, 2);
     }
-    for (int i = 0; i < bytesWR; i++)
-        MV->memoria[dirFisica + i] = (valor >> (8 * (3 - i))) & ML_MASK; // 0xFF
+    if (bytesWR == 4)
+    {
+        for (int i = 0; i < bytesWR; i++)
+        {
+            MV->memoria[dirFisica + i] = (valor >> (8 * (3 - i))) & ML_MASK; // 0xFF
+        }
+    }
+    else if (bytesWR == 2)
+    {
+        for (int i = 0; i < bytesWR; i++)
+        {
+            MV->memoria[dirFisica + i] = (valor >> (8 * (1 - i))) & ML_MASK;
+        }
+    }
+    else
+    {
+        MV->memoria[dirFisica] = (int8_t)valor;
+    }
 }
 
 void escribirSYS(TVM *MV, uint32_t dirFisica, uint32_t formato, uint32_t bytesWR, uint32_t cuantasVeces)
@@ -68,14 +94,13 @@ void stringWrite(TVM *MV, uint32_t dirFisica)
 {
     char palabra[256];
     int i = 0;
-    printf("[%04X] ", dirFisica);
     while (MV->memoria[dirFisica + i] != 0 && i < sizeof(palabra) - 1)
     {
         palabra[i] = MV->memoria[dirFisica + i];
         i++;
     }
     palabra[i] = '\0';
-    printf("%s\n", palabra);
+    printf("%s", palabra);
 }
 
 void stringRead(TVM *MV, uint32_t dirFisica)
@@ -118,7 +143,8 @@ void SYS(TVM *MV)
     uint32_t bytesWR = (MV->registros[ECX] & HIGH_MASK) >> 16; // obtengo los datos del LDH
     uint32_t cuantasVeces = MV->registros[ECX] & LOW_MASK;     // obtengo los datos del LDL
     uint32_t formato = MV->registros[EAX];                     // formato decimal 0x01 formato 0x02 caracter formato 0x04 octal formato 0x08 hexa formato 0x10 binario
-    if (op1 == 0xF){
+    if (op1 == 0xF)
+    {
         MV->banderaBreakPoint = 1;
     }
     else if (op1 == 0x3)
@@ -146,15 +172,13 @@ void SYS(TVM *MV)
             dirFisica += bytesWR;
         }
     }
-
-    
 }
 
 void SYS_Breakpoint(TVM *MV)
 {
     char c;
 
-    if (MV->vmi && MV->vmi[0]!= '\0')
+    if (MV->vmi && MV->vmi[0] != '\0')
     {
         generarVMI(MV);
         scanf("%c", &c); // espera input del usuario
@@ -178,8 +202,8 @@ void generarVMI(TVM *MV)
         // escribir cabera "VMI25" / version / tamanio memoria
         uint16_t version = 1; // version 1
         uint32_t tamanioMemoria = MV->tamanioMemoria / 1024;
-        fwrite("VMI25", 1, TAMANIO_CABECERA, archivoVMI);         // escribir cabecera "VMI25"
-        fwrite(&version, sizeof(uint8_t), 1, archivoVMI);         // escribir version
+        fwrite("VMI25", 1, TAMANIO_CABECERA, archivoVMI); // escribir cabecera "VMI25"
+        fwrite(&version, sizeof(uint8_t), 1, archivoVMI); // escribir version
         // escribir tamaño de memoria en 2 bytes
         uint8_t highByte = (tamanioMemoria >> 8) & ML_MASK;
         uint8_t lowByte = tamanioMemoria & ML_MASK;
@@ -187,26 +211,29 @@ void generarVMI(TVM *MV)
         fwrite(&lowByte, sizeof(uint8_t), 1, archivoVMI);  // escribir tamaño de memoria en 2 bytes
 
         // escribir registros
-        //fwrite(MV->registros, sizeof(int32_t), CANT_REGISTROS, archivoVMI);
-        for (int i = 0; i < CANT_REGISTROS; i++) {
+        // fwrite(MV->registros, sizeof(int32_t), CANT_REGISTROS, archivoVMI);
+        for (int i = 0; i < CANT_REGISTROS; i++)
+        {
             uint32_t reg = MV->registros[i];
             fputc((reg >> 24) & 0xFF, archivoVMI);
             fputc((reg >> 16) & 0xFF, archivoVMI);
             fputc((reg >> 8) & 0xFF, archivoVMI);
             fputc(reg & 0xFF, archivoVMI);
         }
-        //escribir tabla de descriptores de segmentos
-        //fwrite(MV->tablaDescriptoresSegmentos, sizeof(uint32_t), CANT_TABLA, archivoVMI);
-        for (int i = 0; i < CANT_TABLA; i++) {
+        // escribir tabla de descriptores de segmentos
+        // fwrite(MV->tablaDescriptoresSegmentos, sizeof(uint32_t), CANT_TABLA, archivoVMI);
+        for (int i = 0; i < CANT_TABLA; i++)
+        {
             uint32_t desc = MV->tablaDescriptoresSegmentos[i];
             fputc((desc >> 24) & 0xFF, archivoVMI);
             fputc((desc >> 16) & 0xFF, archivoVMI);
             fputc((desc >> 8) & 0xFF, archivoVMI);
             fputc(desc & 0xFF, archivoVMI);
         }
-        //escribir memoria
-        //fwrite(MV->memoria, sizeof(uint8_t), MV->tamanioMemoria, archivoVMI);
-        for (uint32_t i = 0; i < MV->tamanioMemoria; i++) {
+        // escribir memoria
+        // fwrite(MV->memoria, sizeof(uint8_t), MV->tamanioMemoria, archivoVMI);
+        for (uint32_t i = 0; i < MV->tamanioMemoria; i++)
+        {
             fputc(MV->memoria[i], archivoVMI);
         }
 
@@ -301,13 +328,13 @@ void STOP(TVM *MV)
 }
 void MOV(TVM *MV)
 {
-     //printf("\n------MOV-------\n");
-     //printf("Operando 1 -> 0x%08X\n", MV->registros[OP1]);
-     //printf("Operando 2 -> 0x%08X\n", MV->registros[OP2]);
-     //printf("Get Operando 2 0x%08X\n", get(MV, MV->registros[OP2], 4));
-    // printf("--------------\n");
+    // printf("\n------MOV-------\n");
+    // printf("Operando 1 -> 0x%08X\n", MV->registros[OP1]);
+    // printf("Operando 2 -> 0x%08X\n", MV->registros[OP2]);
+    // printf("Get Operando 2 0x%08X\n", get(MV, MV->registros[OP2], 4));
+    //  printf("--------------\n");
     set(MV, MV->registros[OP1], get(MV, MV->registros[OP2], 4));
-   // printf("Get despues del set 0x%08X\n", get(MV, MV->registros[OP1], 4));
+    // printf("Get despues del set 0x%08X\n", get(MV, MV->registros[OP1], 4));
 }
 void ADD(TVM *MV)
 {
@@ -315,8 +342,8 @@ void ADD(TVM *MV)
     uint32_t op2 = MV->registros[OP2]; // operando fuente
     int32_t val1 = get(MV, op1, 4);
     int32_t val2 = get(MV, op2, 4);
-   // printf("Val 1 -> 0x%08X\n", val1);
-    //printf("Val 2 -> 0x%08X\n", val2);
+    // printf("Val 1 -> 0x%08X\n", val1);
+    // printf("Val 2 -> 0x%08X\n", val2);
     int32_t res = val1 + val2;
     setCC(MV, res);
     set(MV, op1, res);
@@ -367,6 +394,9 @@ void CMP(TVM *MV)
     uint32_t op2 = MV->registros[OP2];
     int32_t val1 = (int32_t)get(MV, op1, 4);
     int32_t val2 = (int32_t)get(MV, op2, 4);
+    //printf("val 1 %d\n",val1);
+    //printf("val 2 %d\n",val2);
+
     res = val1 - val2;
     setCC(MV, res);
 }
@@ -462,9 +492,10 @@ void PUSH(TVM *MV)
     {
         MV->memoria[dirFisica + i] = (op1 >> (8 * (3 - i))) & ML_MASK; // 0xFF
     }
-    uint32_t limiteSegmento = obtenerDireccionFisica(MV,MV->registros[SS]);
-    if(dirFisica<limiteSegmento){
-        MV->error=5;
+    uint32_t limiteSegmento = obtenerDireccionFisica(MV, MV->registros[SS]);
+    if (dirFisica < limiteSegmento)
+    {
+        MV->error = 5;
     }
 }
 
@@ -479,9 +510,10 @@ void POP(TVM *MV)
     set(MV, MV->registros[OP1], valor);
     MV->registros[SP] += 4;
 
-    uint32_t limiteSegmento = obtenerDireccionFisica(MV,MV->registros[SS]) + (MV->tablaDescriptoresSegmentos[MV->registros[SS]>>16]  & LOW_MASK);
-    if(dirFisica>limiteSegmento){
-        MV->error=6;
+    uint32_t limiteSegmento = obtenerDireccionFisica(MV, MV->registros[SS]) + (MV->tablaDescriptoresSegmentos[MV->registros[SS] >> 16] & LOW_MASK);
+    if (dirFisica > limiteSegmento)
+    {
+        MV->error = 6;
     }
 }
 

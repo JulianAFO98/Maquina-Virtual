@@ -692,7 +692,6 @@ int32_t get(TVM *MV, uint32_t op, uint8_t cantBytes)
     {
         // printf("OPERANDO MEMORIA 0x%08X\n", op);
         //printf("get A\n");
-        int error = 0;
         uint32_t segmento = 0;                     // selector de segmento (ej: DS = 0001) //  27 // 0xFFFF
         int32_t offset = (int16_t)(op & LOW_MASK); // offset lógico 0xFFFF
         uint32_t regBase = (op >> 16) & 0x1F;   // registro base si hay (ej: 0D = EDX)  // 0xFF
@@ -750,6 +749,11 @@ int32_t get(TVM *MV, uint32_t op, uint8_t cantBytes)
         {
             valor = (valor << 8) | MV->memoria[dirFisica + i];
         }
+        if(cantBytesLectura == 1){
+            valor = (int8_t)valor;
+        }else if(cantBytesLectura == 2){
+            valor = (int16_t)valor;
+        }
         // printf("Valor get %X\n", valor);
         MV->registros[LAR] = dirLogica;
         MV->registros[MAR] = ((cantBytes << 16) & HIGH_MASK) | (dirFisica & LOW_MASK);
@@ -797,6 +801,7 @@ int32_t get(TVM *MV, uint32_t op, uint8_t cantBytes)
         valor = (int32_t)inmediato16;
     }
 
+    
     return (int32_t)valor;
 }
 
@@ -819,6 +824,9 @@ int esSalto(uint32_t codOp)
 
 void set(TVM *MV, uint32_t op1, uint32_t op2)
 {
+    //printf("op 1 0x%08X\n",op1);
+
+    //printf("op 2 0x%08X\n",op2);
     uint32_t TOperando = (op1 & MH_MASK) >> 24; // podriamos usar el Operando ya guardado en la MV // 0xFF000000
     if (TOperando == TMEMORIA)
     {
