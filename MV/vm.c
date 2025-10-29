@@ -64,8 +64,8 @@ void inicializarVM(char *nombreArchivo, TVM *VM, uint32_t tamanioMemoria, char *
         {
             masSignificativos = fgetc(VMX);
             menosSignificativos = fgetc(VMX);
-            printf("mas %X menos %X   ", masSignificativos, menosSignificativos);
-            printf("\n");
+            //printf("mas %X menos %X   ", masSignificativos, menosSignificativos);
+            //printf("\n");
             switch (i)
             {
             case 0:
@@ -210,11 +210,14 @@ void inicializarVM(char *nombreArchivo, TVM *VM, uint32_t tamanioMemoria, char *
         VM->registros[SP] = VM->registros[SS] + offSetSS; // me caigo del segmento SS
 
         printf("args %d\n", argcParam);
+        uint32_t baseParam = 0;
+        uint32_t argvOffset = tamanio_PS - (argcParam * 4);
+        uint32_t argv = (argcParam > 0) ? (baseParam + argvOffset) : (uint32_t)-1;
 
         uint32_t dirFisica;
         VM->registros[SP] -= 4;
         dirFisica = obtenerDireccionFisica(VM, VM->registros[SP]);
-        uint32_t valor = argcParam ? 0 : (uint32_t)-1;
+        uint32_t valor = argv;
         for (int i = 0; i < 4; i++)
             VM->memoria[dirFisica + i] = (valor >> (8 * (3 - i))) & ML_MASK;
 
