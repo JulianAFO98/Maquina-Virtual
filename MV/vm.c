@@ -563,19 +563,19 @@ char *operandoDisassemblerMemoria(uint8_t op)
     case 0x9B:
         return "w[0";
     case 0x1A:
-        return "CS";
+        return "[CS";
     case 0x1C:
-        return "ES";
+        return "[ES";
     case 0x1D:
-        return "SS";
+        return "[SS";
     case 0x1E:
-        return "KS";
+        return "[KS";
     case 0x1F:
-        return "PS";
+        return "[PS";
     case 0x7:
-        return "SP";
+        return "[SP";
     case 0x8:
-        return "BP";
+        return "[BP";
     default:
         return "No existe";
     }
@@ -917,7 +917,8 @@ void disassembler(TVM *MV)
     uint32_t tipo_operando;
     uint32_t opGenerico;
     uint32_t tipo_operando2;
-    uint32_t finCS = (MV->tablaDescriptoresSegmentos[(MV->registros[CS] >> 16)] & LOW_MASK) + ((MV->tablaDescriptoresSegmentos[(MV->registros[CS] >> 16)] & HIGH_MASK) >> 16);
+    uint32_t finCS = (MV->tablaDescriptoresSegmentos[(MV->registros[CS] >> 16)] & LOW_MASK) +
+                     ((MV->tablaDescriptoresSegmentos[(MV->registros[CS] >> 16)] & HIGH_MASK) >> 16);
     uint32_t reg1, reg2;
     uint32_t direccionActual = obtenerDireccionFisica(MV, MV->registros[CS]);
     uint32_t sumaBytes = 0;
@@ -925,14 +926,11 @@ void disassembler(TVM *MV)
     while (direccionActual < finCS)
     {
         direccionFisicaIP = obtenerDireccionFisica(MV, direccionActual);
-
-        // Paso puntero directo, no &MV
         interpretaInstruccionDisassembler(MV, MV->memoria[direccionFisicaIP], &op1, &op2, &opc);
 
         tipo_operando = (op1 >> 24) & 0x3;
         tipo_operando2 = (op2 >> 24) & 0x3;
 
-        // Caso: ambos operandos existen
         if ((tipo_operando != 0) && (tipo_operando2 != 0))
         {
             uint32_t valor = 0;
@@ -958,21 +956,33 @@ void disassembler(TVM *MV)
         reg1 = op1 & ML_MASK;
         reg2 = op2 & ML_MASK;
         sumaBytes = tipo_operando + tipo_operando2;
-        // Parte visual: imprime direccion, bytes y mnemónico
+
+        uint32_t ipActual = obtenerDireccionFisica(MV, MV->registros[IP]);
+        if (direccionActual == ipActual && MV->banderaBreakPoint)
+            printf(">");
+        else if (direccionActual == ipActual && !MV->banderaBreakPoint)
+            printf(">");  // también marcar entry point cuando empieza
+        else
+            printf(" ");
+
         printf("[%04X] ", direccionActual);
 
         for (int j = 0; j <= sumaBytes; j++)
-            printf("%02X ", MV->memoria[direccionFisicaIP + j]);
+        {
+            if(j != 6)
+                printf("%02X ", MV->memoria[direccionFisicaIP + j]);
+            else
+                printf(".. ");
+        }
 
         for (int j = 0; j < (6 - sumaBytes) * 3; j++)
             printf(" ");
+        printf("| ");
 
         printf("%-6s ", operacionDisassembler(opc));
 
-        // Ahora imprimir operandos
         uint32_t registro;
 
-        // Primer operando
         if (tipo_operando == TMEMORIA)
         {
             registro = op1 >> 16;
@@ -985,17 +995,14 @@ void disassembler(TVM *MV)
         else if (tipo_operando == TREGISTRO)
         {
             registro = op1 & ML_MASK;
-            //  printf("registro %X\n", registro);
             printf("%s, ", operandoDisassembler(registro));
         }
 
-        // Segundo operando
         if (tipo_operando2 == TMEMORIA)
         {
-
             registro = op2 >> 16;
             int32_t offset = (int8_t)(op2 & ML_MASK);
-            printf("[%s", operandoDisassemblerMemoria(registro));
+            printf("%s", operandoDisassemblerMemoria(registro));
             if (offset != 0)
                 printf("%+d", offset);
             printf("]\n");
@@ -1008,13 +1015,13 @@ void disassembler(TVM *MV)
         }
         else if (tipo_operando2 == TINMEDIATO)
         {
-            // ojo con esto, hardFIX para que se muestre bien el sys
             opGenerico = op2 ? op2 : op1;
             uint32_t inmediato = get(MV, opGenerico, 4);
             printf("%X\n", inmediato);
         }
         else
             printf("\n");
+
         direccionActual += sumaBytes + 1;
     }
 }
