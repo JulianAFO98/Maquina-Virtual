@@ -138,7 +138,6 @@ int main(int argc, char *argv[])
                         VM.error = 3;
                     
                 }
-                //printf("C\n");
                 if (VM.error && VM.registros[IP] != -1)
                     mostrarError(VM.error);
                 

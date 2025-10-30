@@ -485,23 +485,28 @@ void RND(TVM *MV)
 void PUSH(TVM *MV)
 {
     int32_t op1 = get(MV, MV->registros[OP1], 4);
-    // printf("\nPUSH 0x%08X\n",op1);
+
     MV->registros[SP] -= 4;
     uint32_t dirFisica = obtenerDireccionFisica(MV, MV->registros[SP]);
+    if (MV->registros[SP] < MV->registros[SS]){
+        MV->error = 5;
+        return;
+    }
     for (int i = 0; i < 4; i++)
     {
         MV->memoria[dirFisica + i] = (op1 >> (8 * (3 - i))) & ML_MASK; // 0xFF
     }
-    uint32_t limiteSegmento = obtenerDireccionFisica(MV, MV->registros[SS]);
-    if (dirFisica < limiteSegmento)
-    {
-        MV->error = 5;
-    }
+   
 }
 
 void POP(TVM *MV)
 {
     uint32_t dirFisica = obtenerDireccionFisica(MV, MV->registros[SP]);
+
+    uint32_t limiteSegmento = obtenerDireccionFisica(MV, MV->registros[SS]) + (MV->tablaDescriptoresSegmentos[MV->registros[SS] >> 16] & LOW_MASK);
+    if (dirFisica > limiteSegmento)
+        MV->error = 6;
+
     int32_t valor = 0;
     for (int i = 0; i < 4; i++)
     {
@@ -510,11 +515,7 @@ void POP(TVM *MV)
     set(MV, MV->registros[OP1], valor);
     MV->registros[SP] += 4;
 
-    uint32_t limiteSegmento = obtenerDireccionFisica(MV, MV->registros[SS]) + (MV->tablaDescriptoresSegmentos[MV->registros[SS] >> 16] & LOW_MASK);
-    if (dirFisica > limiteSegmento)
-    {
-        MV->error = 6;
-    }
+   
 }
 
 void CALL(TVM *MV)
